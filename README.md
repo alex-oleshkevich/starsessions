@@ -1,4 +1,6 @@
-# Session support for Starlette and FastAPI frameworks
+## Pluggable session support for Starlette and FastAPI frameworks
+
+This package based on this long standing [pull request](https://github.com/encode/starlette/pull/499) into the mainstream by the same author.
 
 ## Installation
 
@@ -6,9 +8,7 @@ Install `starsessions` using PIP or poetry:
 
 ```bash
 pip install starsessions
-
 # or
-
 poetry add starsessions
 ```
 
