@@ -12,6 +12,10 @@ pip install starsessions
 poetry add starsessions
 ```
 
+## Quick start
+
+See example application in `example/` directory of this repository.
+
 ## Enable session support
 
 In order to enable session support add `starsessions.SessionMiddleware` to your application.
