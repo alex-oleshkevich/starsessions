@@ -38,7 +38,7 @@ repos:
         hooks:
             -   id: black
                 language_version: python3.9
-                files: ^(kupala|tests)
+                files: ^(starsessions|tests)
 
     -   repo: https://gitlab.com/pycqa/flake8
         rev: 3.9.2
@@ -49,14 +49,8 @@ repos:
         rev: 'v0.812'
         hooks:
             -   id: mypy
-                files: kupala
+                files: starsessions
                 exclude: ^tests/
-                args:
-                    - --disallow-untyped-defs
-                    - --ignore-missing-imports
-                    - --warn-unused-configs
-                    - --warn-unreachable
-                    - --warn-redundant-casts
 
     -   repo: local
         hooks:

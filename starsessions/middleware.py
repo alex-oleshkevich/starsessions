@@ -20,14 +20,14 @@ class SessionMiddleware:
         backend: SessionBackend = None,
     ) -> None:
         self.app = app
-        if not backend:
-            if not secret_key:
+        if backend is None:
+            if secret_key is None:
                 raise ImproperlyConfigured(
                     "CookieBackend requires session_cookie argument."
                 )
             backend = CookieBackend(secret_key, max_age)
 
-        self.backend = backend or CookieBackend(secret_key, max_age)
+        self.backend = backend
         self.session_cookie = session_cookie
         self.max_age = max_age
         self.autoload = autoload
