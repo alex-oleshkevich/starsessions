@@ -1,6 +1,6 @@
 ## Pluggable session support for Starlette and FastAPI frameworks
 
-This package based on this long standing [pull request](https://github.com/encode/starlette/pull/499) in the mainstream by the same author.
+This package is based on this long standing [pull request](https://github.com/encode/starlette/pull/499) in the mainstream by the same author.
 
 ## Installation
 
@@ -66,7 +66,7 @@ app.add_middleware(SessionMiddleware, backend=backend)
 
 ### InMemoryBackend
 
-Simply stores data in memory. The data is not persisted across requests.
+Simply stores data in memory. The data is cleared after server restart.
 Mostly for use with unit tests.
 
 ### CookieBackend
