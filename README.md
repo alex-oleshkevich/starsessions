@@ -1,6 +1,6 @@
 ## Pluggable session support for Starlette and FastAPI frameworks
 
-This package based on this long standing [pull request](https://github.com/encode/starlette/pull/499) into the mainstream by the same author.
+This package based on this long standing [pull request](https://github.com/encode/starlette/pull/499) in the mainstream by the same author.
 
 ## Installation
 
@@ -76,7 +76,11 @@ This is the default backend.
 
 ## Custom backend
 
-Create a class which implements the `starsessions.SessionBackend` interface:
+Creating new backends is quite simple. All you need is to extend `starsessions.SessionBackend`
+class and implement abstract methods.
+
+Here is an example of how we can create a memory-based session backend.
+Note, it is important that `write` method returns session ID as a string value.
 
 ```python
 from starlette.sessions import SessionBackend
@@ -105,5 +109,3 @@ class InMemoryBackend(SessionBackend):
     async def exists(self, session_id: str)-> bool:
         return session_id in self._storage
 ```
-
-Note, `write` has to return the session id.
