@@ -67,7 +67,7 @@ Mostly for use with unit tests.
 
 ### CookieBackend
 
-Stores session data in a signed cookie on the client.  
+Stores session data in a signed cookie on the client.
 This is the default backend.
 
 ## Custom backend

@@ -5,7 +5,6 @@ import uuid
 from base64 import b64decode, b64encode
 
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
-
 from starlette.datastructures import Secret
 
 

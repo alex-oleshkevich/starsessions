@@ -1,6 +1,6 @@
 import pytest
-from starsessions import (CookieBackend, InMemoryBackend, Session,
-                          SessionNotLoaded)
+
+from starsessions import CookieBackend, InMemoryBackend, Session, SessionNotLoaded
 
 
 @pytest.fixture()

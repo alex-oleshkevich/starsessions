@@ -1,9 +1,11 @@
 import re
+
 import pytest
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.testclient import TestClient
-from starsessions import SessionMiddleware, ImproperlyConfigured, InMemoryBackend
+
+from starsessions import ImproperlyConfigured, InMemoryBackend, SessionMiddleware
 
 
 def view_session(request):
