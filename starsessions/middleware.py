@@ -23,7 +23,7 @@ class SessionMiddleware:
         if backend is None:
             if secret_key is None:
                 raise ImproperlyConfigured(
-                    "CookieBackend requires session_cookie argument."
+                    "CookieBackend requires secret_key argument."
                 )
             backend = CookieBackend(secret_key, max_age)
 
