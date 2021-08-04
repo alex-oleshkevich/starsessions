@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "starsessions"
-version = "1.0.1"
+version = "1.0.2"
 description = "Pluggable session support for Starlette."
 authors = ["alex.oleshkevich <alex.oleshkevich@gmail.com>"]
 license = "MIT"
