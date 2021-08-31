@@ -1,14 +1,26 @@
+#!/usr/bin/env python3
+# Copyright (C) 2019-2021 All rights reserved.
+# FILENAME: examples/memory.py
+# VERSION: 	0.0.1
+# CREATED: 	2021-09-01 01:17
+# AUTHOR: 	Aekasitt Guruvanich <aekazitt@gmail.com>
+# DESCRIPTION:
+#
+# HISTORY:
+#*************************************************************
+### Standard Packages ###
 import datetime
-
+### Third-Party Packages ###
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse, RedirectResponse
-
-from fastapi_sesh import FastapiSeshMiddleware
+### Local Modules ###
+from fastapi_sesh import FastapiSeshMiddleware, InMemoryBackend
 
 app = FastAPI()
 
-app.add_middleware(FastapiSeshMiddleware, secret_key='secret', autoload=True)
+backend = InMemoryBackend()
+app.add_middleware(FastapiSeshMiddleware, backend=backend, autoload=True)
 
 @app.get('/', response_class=JSONResponse)
 async def homepage(request: Request):
