@@ -16,6 +16,15 @@ poetry add starsessions
 
 See example application in `example/` directory of this repository.
 
+### Run Examples
+
+To run the provided examples, first you must install extra dependencies [uvicorn]() and [jinja2]()
+Run the following command to do so
+
+```bash
+pip install -e .[examples]
+```
+
 ## Enable session support
 
 In order to enable session support add `starsessions.SessionMiddleware` to your application.
