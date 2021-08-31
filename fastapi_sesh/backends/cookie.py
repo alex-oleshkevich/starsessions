@@ -44,10 +44,10 @@ class CookieBackend(FastapiSeshBackend):
     encoded_data = b64encode(dumps(data).encode('utf-8'))
     return self._signer.sign(encoded_data).decode('utf-8')
 
-  async def remove(self, session_id: str) -> None:
+  async def remove(self, session_id: Optional[str] = None) -> None:
     '''
     Session data stored on client side - no way to remove it.
     '''
 
-  async def exists(self, session_id: str) -> bool:
+  async def exists(self, session_id: Optional[str] = None) -> bool:
     return False
