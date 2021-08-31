@@ -20,6 +20,7 @@ from .exceptions import ImproperlyConfigured
 from .backends.base import FastapiSeshBackend
 from .backends.cookie import CookieBackend
 from .session import Session
+
 class FastapiSeshMiddleware:
   def __init__(
     self,
