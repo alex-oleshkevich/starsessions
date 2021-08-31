@@ -18,7 +18,6 @@ class FastapiSeshBackend(ABC):
   Base class for session backends
   '''
 
-
   @abstractmethod
   async def read(self, session_id: str) -> Dict[str, Any]:  # pragma: no cover
     '''

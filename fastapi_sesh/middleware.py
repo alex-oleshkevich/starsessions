@@ -16,9 +16,9 @@ from pydantic import SecretStr
 from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 ### Local Modules ###
-from .exceptions import ImproperlyConfigured
 from .backends.base import FastapiSeshBackend
 from .backends.cookie import CookieBackend
+from .exceptions import ImproperlyConfigured
 from .session import Session
 
 class FastapiSeshMiddleware:

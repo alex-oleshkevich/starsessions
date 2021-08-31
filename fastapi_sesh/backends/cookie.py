@@ -37,9 +37,7 @@ class CookieBackend(FastapiSeshBackend):
     except (BadSignature, SignatureExpired):
       return {}
 
-  async def write(
-    self, data: Dict, session_id: Optional[str] = None
-  ) -> str:
+  async def write(self, data: Dict, session_id: Optional[str] = None) -> str:
     '''
     The data is a session id in this backend.
     '''

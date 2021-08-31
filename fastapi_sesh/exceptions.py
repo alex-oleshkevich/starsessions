@@ -17,7 +17,6 @@ class SessionError(Exception):
 class SessionNotLoaded(SessionError):
   pass
 
-
 class ImproperlyConfigured(SessionError):
   '''
   Exception is raised when some settings are missing or misconfigured
