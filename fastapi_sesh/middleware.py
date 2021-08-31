@@ -11,14 +11,15 @@
 ### Standard Packages ###
 from typing import Union
 ### Third-Party Packages ###
-from starlette.datastructures import MutableHeaders, Secret
-from starlette.requests import HTTPConnection
+from fastapi.requests import Request
+from pydantic import SecretStr
+from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 ### Local Modules ###
 from .exceptions import ImproperlyConfigured
-from .session import Session
 from .backends.base import FastapiSeshBackend
 from .backends.cookie import CookieBackend
+from .session import Session
 class FastapiSeshMiddleware:
   def __init__(
     self,
@@ -28,7 +29,7 @@ class FastapiSeshMiddleware:
     same_site: str = 'lax',
     https_only: bool = False,
     autoload: bool = False,
-    secret_key: Union[str, Secret] = None,
+    secret_key: Union[str, SecretStr] = None,
     backend: FastapiSeshBackend = None,
   ) -> None:
     self.app = app
@@ -48,7 +49,7 @@ class FastapiSeshMiddleware:
     if scope['type'] not in ('http', 'websocket'):  # pragma: no cover
       await self.app(scope, receive, send)
       return
-    connection = HTTPConnection(scope)
+    connection = Request(scope)
     session_id = connection.cookies.get(self.session_cookie, None)
     scope['session'] = Session(self.backend, session_id)
     if self.autoload:
