@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from starsessions import SessionMiddleware
+from fastapi_sesh import FastapiSeshMiddleware
 
 app = FastAPI()
 
-app.add_middleware(SessionMiddleware, secret_key='secret', autoload=True)
+app.add_middleware(FastapiSeshMiddleware, secret_key='secret', autoload=True)
 
 @app.get('/', response_class=JSONResponse)
 async def homepage(request: Request):
