@@ -14,7 +14,7 @@ from json import dumps, loads
 from typing import Dict, Optional, Union
 ### Third-Party Packages ###
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
-from starlette.datastructures import Secret
+from pydantic import SecretStr
 ### Local Modules ###
 from .base import FastapiSeshBackend
 
@@ -23,7 +23,7 @@ class CookieBackend(FastapiSeshBackend):
   Stores session data in the browser's cookie as a signed string.
   '''
 
-  def __init__(self, secret_key: Union[str, Secret], max_age: int):
+  def __init__(self, secret_key: Union[str, SecretStr], max_age: int):
     self._signer = TimestampSigner(str(secret_key))
     self._max_age = max_age
 
