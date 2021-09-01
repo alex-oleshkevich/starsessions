@@ -2,7 +2,7 @@
 
 ## Pluggable session support for FastAPI framework
 
-This is an extension built on top of the strong foundation of `starsession` by Alex Oleshkevich located here on [GitHub: alex-oleshkevich/starsessions](https://github.com/alex-oleshkevich/starsessions)
+This is an extension built on top of the strong foundation of `starsessions` by Alex Oleshkevich located here on [GitHub: alex-oleshkevich/starsessions](https://github.com/alex-oleshkevich/starsessions)
 You can find the work on his Repo to be just as well compatible with your FastAPI App or other Starlette frameworks with ease. This repository will be a work extending on this strong foundation.
 
 ## Roadmap
