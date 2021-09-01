@@ -4,6 +4,23 @@ version = "0.0.1"
 description = "FastAPI Middleware with simple Session implementation, plug n' playable"
 authors = ["Sitt Guruvanich <aekasitt@gmail.com>"]
 license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/aekasitt/fastapi-backstage-sesh"
+repository = "https://github.com/aekasitt/fastapi-backstage-sesh"
+keywords = ["starlette", "fastapi", "session"]
+classifiers = [
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.6",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Operating System :: OS Independent",
+  "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+  "Topic :: Software Development :: Libraries :: Python Modules"
+]
 
 [tool.poetry.dependencies]
 python = "^3.6.2"
