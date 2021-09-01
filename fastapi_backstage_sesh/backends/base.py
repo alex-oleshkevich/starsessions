@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 from uuid import uuid4 as uuid
 
-class FastapiSeshBackend(ABC):
+class BackstageSeshBackend(ABC):
   '''
   Base class for session backends
   '''

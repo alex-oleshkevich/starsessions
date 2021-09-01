@@ -16,7 +16,7 @@ from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.testclient import TestClient
 ### Local Modules ###
-from fastapi_sesh import FastapiSeshMiddleware, ImproperlyConfigured, InMemoryBackend
+from fastapi_backstage_sesh import BackstageSeshMiddleware, ImproperlyConfigured, InMemoryBackend
 
 def view_session(request):
   return JSONResponse({'session': request.session.data})
@@ -39,7 +39,7 @@ def create_app():
 
 def test_session():
   app = create_app()
-  app.add_middleware(FastapiSeshMiddleware, secret_key='example', autoload=True)
+  app.add_middleware(BackstageSeshMiddleware, secret_key='example', autoload=True)
   client = TestClient(app)
   response = client.get('/view_session')
   assert response.json() == {'session': {}}
@@ -59,7 +59,7 @@ def test_session():
 
 def test_empty_session():
   app = create_app()
-  app.add_middleware(FastapiSeshMiddleware, secret_key='example', autoload=True)
+  app.add_middleware(BackstageSeshMiddleware, secret_key='example', autoload=True)
   headers = {'cookie': 'session=someid'}
   client = TestClient(app)
   response = client.get('/view_session', headers=headers)
@@ -67,9 +67,7 @@ def test_empty_session():
 
 def test_session_expires():
   app = create_app()
-  app.add_middleware(
-    FastapiSeshMiddleware, secret_key='example', max_age=-1, autoload=True
-  )
+  app.add_middleware(BackstageSeshMiddleware, secret_key='example', max_age=-1, autoload=True)
   client = TestClient(app)
   response = client.post('/update_session', json={'some': 'data'})
   assert response.json() == {'session': {'some': 'data'}}
@@ -107,7 +105,7 @@ def test_secure_session():
 def test_session_cookie_subpath():
   app = create_app()
   second_app = create_app()
-  second_app.add_middleware(FastapiSeshMiddleware, secret_key='example', autoload=True)
+  second_app.add_middleware(BackstageSeshMiddleware, secret_key='example', autoload=True)
   app.mount('/second_app', second_app)
   client = TestClient(app, base_url='http://testserver/second_app')
   response = client.post('second_app/update_session', json={'some': 'data'})
@@ -118,12 +116,12 @@ def test_session_cookie_subpath():
 def test_session_wants_secret_key():
   with pytest.raises(ImproperlyConfigured):
     app = create_app()
-    app.add_middleware(FastapiSeshMiddleware)
+    app.add_middleware(BackstageSeshMiddleware)
 
 def test_session_custom_backend():
   backend = InMemoryBackend()
   app = create_app()
-  app.add_middleware(FastapiSeshMiddleware, backend=backend, autoload=True)
+  app.add_middleware(BackstageSeshMiddleware, backend=backend, autoload=True)
   headers = {'cookie': 'session=someid'}
   client = TestClient(app)
   response = client.get('/view_session', headers=headers)

@@ -11,7 +11,7 @@
 ### Third-Party Packages ###
 import pytest
 ### Local Modules ###
-from fastapi_sesh import (
+from fastapi_backstage_sesh import (
   CookieBackend, InMemoryBackend, Session, SessionNotLoaded
 )
 

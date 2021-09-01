@@ -8,12 +8,12 @@
 #
 # HISTORY:
 #*************************************************************
-from .base import FastapiSeshBackend
+from .base import BackstageSeshBackend
 from .cookie import CookieBackend
 from .in_memory import InMemoryBackend
 
 __all__ = [
+  'BackstageSeshBackend',
   'CookieBackend',
-  'FastapiSeshBackend',
   'InMemoryBackend'
 ]

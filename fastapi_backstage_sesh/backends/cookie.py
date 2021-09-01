@@ -16,9 +16,9 @@ from typing import Dict, Optional, Union
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
 from pydantic import SecretStr
 ### Local Modules ###
-from .base import FastapiSeshBackend
+from .base import BackstageSeshBackend
 
-class CookieBackend(FastapiSeshBackend):
+class CookieBackend(BackstageSeshBackend):
   '''
   Stores session data in the browser's cookie as a signed string.
   '''

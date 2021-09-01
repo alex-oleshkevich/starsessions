@@ -8,15 +8,15 @@
 #
 # HISTORY:
 #*************************************************************
-from .middleware import FastapiSeshMiddleware
-from .backends import ( CookieBackend, FastapiSeshBackend, InMemoryBackend )
+from .middleware import BackstageSeshMiddleware
+from .backends import ( CookieBackend, BackstageSeshBackend, InMemoryBackend )
 from .exceptions import ( ImproperlyConfigured, SessionError, SessionNotLoaded )
 from .session import ( Session )
 
 __all__ = [
   'Session',
-  'FastapiSeshBackend',
-  'FastapiSeshMiddleware',
+  'BackstageSeshBackend',
+  'BackstageSeshMiddleware',
   'CookieBackend',
   'InMemoryBackend',
   'SessionNotLoaded',

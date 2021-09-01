@@ -11,9 +11,9 @@
 ### Standard Packages ###
 from typing import Dict, Optional
 ### Local Modules ###
-from .base import FastapiSeshBackend
+from .base import BackstageSeshBackend
 
-class InMemoryBackend(FastapiSeshBackend):
+class InMemoryBackend(BackstageSeshBackend):
   '''
   Stores session data in a dictionary.
   '''

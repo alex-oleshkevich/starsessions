@@ -11,10 +11,11 @@
 ### Standard Packages ###
 from typing import Any, Dict, ItemsView, KeysView, ValuesView
 ### Local Modules ###
-from .backends.base import FastapiSeshBackend
+from .backends import BackstageSeshBackend
 from .exceptions import SessionNotLoaded
+
 class Session:
-  def __init__(self, backend: FastapiSeshBackend, session_id: str = None) -> None:
+  def __init__(self, backend: BackstageSeshBackend, session_id: str = None) -> None:
     self.session_id = session_id
     self._data: Dict[str, Any] = {}
     self._backend = backend

@@ -8,43 +8,43 @@
 #
 # HISTORY:
 #*************************************************************
-### Standard Packages ###
-from typing import Union
 ### Third-Party Packages ###
 from fastapi.requests import Request
-from pydantic import SecretStr
 from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 ### Local Modules ###
-from .backends.base import FastapiSeshBackend
-from .backends.cookie import CookieBackend
-from .exceptions import ImproperlyConfigured
+from .backends import BackstageSeshBackend
+from .backstage_config import BackstageConfig
 from .session import Session
 
-class FastapiSeshMiddleware:
-  def __init__(
-    self,
-    app: ASGIApp,
-    session_cookie: str = 'fastapi-sesh',
-    max_age: int = 14 * 24 * 60 * 60,  # 14 days, in seconds
-    same_site: str = 'lax',
-    https_only: bool = False,
-    autoload: bool = False,
-    secret_key: Union[str, SecretStr] = None,
-    backend: FastapiSeshBackend = None,
-  ) -> None:
-    self.app = app
-    if backend is None:
-      if secret_key is None:
-        raise ImproperlyConfigured('CookieBackend requires secret_key argument.')
-      backend = CookieBackend(secret_key, max_age)
-    self.backend = backend
-    self.session_cookie = session_cookie
-    self.max_age = max_age
-    self.autoload = autoload
-    self.security_flags = 'httponly; samesite=' + same_site
-    if https_only:  # Secure flag can be used with HTTPS only
-      self.security_flags += '; secure'
+class BackstageSeshMiddleware(BackstageConfig):
+
+  def __init__(self, app: ASGIApp):
+    self._app = app
+
+  @property
+  def app(self) -> ASGIApp:
+    return self._app
+
+  @property
+  def autoload(self) -> bool:
+    return self._autoload
+
+  @property
+  def backend(self) -> BackstageSeshBackend:
+    return self._backend
+
+  @property
+  def max_age(self) -> int:
+    return self._max_age
+
+  @property
+  def security_flags(self) -> str:
+    return self._security_flags
+
+  @property
+  def session_cookie(self) -> str:
+    return self._session_cookie
 
   async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
     if scope['type'] not in ('http', 'websocket'):  # pragma: no cover
@@ -67,8 +67,7 @@ class FastapiSeshMiddleware:
             self.session_cookie,
             session_id,
             path,
-            self.max_age,
-            self.security_flags,
+            self.max_age, self.security_flags,
           )
           headers.append('Set-Cookie', header_value)
         elif scope['session'].is_loaded and scope['session'].is_empty:

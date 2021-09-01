@@ -14,13 +14,21 @@ import datetime
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel
 ### Local Modules ###
-from fastapi_sesh import FastapiSeshMiddleware, InMemoryBackend
+from fastapi_backstage_sesh import BackstageSeshMiddleware, InMemoryBackend
 
 app = FastAPI()
 
-backend = InMemoryBackend()
-app.add_middleware(FastapiSeshMiddleware, backend=backend, autoload=True)
+class BackstageSettings(BaseModel):
+  autoload: bool           = True
+  backend: InMemoryBackend = InMemoryBackend()
+
+@BackstageSeshMiddleware.load_config
+def get_backstage_config():
+  return BackstageSettings()
+
+app.add_middleware(BackstageSeshMiddleware)
 
 @app.get('/', response_class=JSONResponse)
 async def homepage(request: Request):

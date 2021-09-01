@@ -14,12 +14,21 @@ import datetime
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel
 ### Local Modules ###
-from fastapi_sesh import FastapiSeshMiddleware
+from fastapi_backstage_sesh import BackstageSeshMiddleware
 
 app = FastAPI()
 
-app.add_middleware(FastapiSeshMiddleware, secret_key='secret', autoload=True)
+class BackstageSettings(BaseModel):
+  autoload: bool  = True
+  secret_key: str = 'asecrettoeverybody'
+
+@BackstageSeshMiddleware.load_config
+def get_backstage_config():
+  return BackstageSettings()
+
+app.add_middleware(BackstageSeshMiddleware)
 
 @app.get('/', response_class=JSONResponse)
 async def homepage(request: Request):
