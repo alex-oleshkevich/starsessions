@@ -1,5 +1,11 @@
 # FastAPI Backstage Sesh
 
+[![Build Status](https://travis-ci.com/aekasitt/fastapi-backstage-sesh.svg?branch=master)](https://travis-ci.com/aekasitt/fastapi-backstage-sesh)
+[![Package Vesion](https://img.shields.io/pypi/v/fastapi-backstage-sesh)](https://pypi.org/project/fastapi-backstage-sesh)
+[![Format](https://img.shields.io/pypi/format/fastapi-backstage-sesh)](https://pypi.org/project/fastapi-backstage-sesh)
+[![Python Version](https://img.shields.io/pypi/pyversions/fastapi-backstage-sesh)](https://pypi.org/project/fastapi-backstage-sesh)
+[![License](https://img.shields.io/pypi/l/fastapi-backstage-sesh)](https://pypi.org/project/fastapi-backstage-sesh)
+
 ## Pluggable session support for FastAPI framework
 
 This is an extension built on top of the strong foundation of `starsessions` by Alex Oleshkevich located here on [GitHub: alex-oleshkevich/starsessions](https://github.com/alex-oleshkevich/starsessions)
