@@ -17,7 +17,7 @@ from fastapi.responses import Response
 from fastapi.testclient import TestClient
 ### Local Modules ###
 from . import (
-  setup_cookie, setup_memory, setup_secondapp
+  setup_cookie, setup_httpsonly, setup_memory, setup_secondapp
 )
 
 @pytest.mark.parametrize('setup', [setup_cookie, setup_memory])
@@ -58,27 +58,26 @@ def test_session_expires(setup: Callable):
   response: Response         = client.get('/view_session', cookies={'session': expired_session_value})
   assert response.json()     == {'session': {}}
 
-# @pytest.mark.parametrize('setup', [testclient_cookie, testclient_memory])
-# def test_secure_session(setup: Callable):
-#   client: TestClient    = setup()
-#   secure_client         = TestClient(app, base_url='https://testserver')
-#   unsecure_client       = TestClient(app, base_url='http://testserver')
-#   response = unsecure_client.get('/view_session')
-#   assert response.json() == {'session': {}}
-#   response = unsecure_client.post('/update_session', json={'some': 'data'})
-#   assert response.json() == {'session': {'some': 'data'}}
-#   response = unsecure_client.get('/view_session')
-#   assert response.json() == {'session': {}}
-#   response = secure_client.get('/view_session')
-#   assert response.json() == {'session': {}}
-#   response = secure_client.post('/update_session', json={'some': 'data'})
-#   assert response.json() == {'session': {'some': 'data'}}
-#   response = secure_client.get('/view_session')
-#   assert response.json() == {'session': {'some': 'data'}}
-#   response = secure_client.post('/clear_session')
-#   assert response.json() == {'session': {}}
-#   response = secure_client.get('/view_session')
-#   assert response.json() == {'session': {}}
+@pytest.mark.parametrize('setup', [ setup_httpsonly ])
+def test_secure_session(setup: Callable):
+  secure_client: TestClient   = TestClient(setup(), base_url='https://testserver')
+  unsecure_client: TestClient = TestClient(setup(), base_url='http://testserver')
+  response: Response          = unsecure_client.get('/view_session')
+  assert response.json()      == { 'session': {}}
+  response: Response          = unsecure_client.post('/update_session', json={ 'some': 'data' })
+  assert response.json()      == { 'session': { 'some': 'data' }}
+  response: Response          = unsecure_client.get('/view_session')
+  assert response.json()      == { 'session': {}}
+  response: Response          = secure_client.get('/view_session')
+  assert response.json()      == { 'session': {}}
+  response: Response          = secure_client.post('/update_session', json={ 'some': 'data' })
+  assert response.json()      == {'session': {'some': 'data'}}
+  response: Response          = secure_client.get('/view_session')
+  assert response.json()      == {'session': {'some': 'data'}}
+  response: Response          = secure_client.post('/clear_session')
+  assert response.json()      == {'session': {}}
+  response: Response          = secure_client.get('/view_session')
+  assert response.json()      == {'session': {}}
 
 @pytest.mark.parametrize('setup', [ setup_secondapp ])
 def test_session_cookie_subpath(setup: Callable):

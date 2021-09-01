@@ -18,7 +18,22 @@ from fastapi_backstage_sesh import (
   BackstageSeshMiddleware, InMemoryBackend
 )
 
-def setup_cookie(app: FastAPI = FastAPI()) -> FastAPI:
+def create_app(app: FastAPI = FastAPI()) -> FastAPI:
+  # routes
+  @app.get('/view_session', response_class=JSONResponse)
+  async def view_session(request: Request):
+    return { 'session': request.session.data }
+  @app.post('/update_session', response_class=JSONResponse)
+  async def update_session(request: Request):
+    request.session.update(await request.json())
+    return { 'session': request.session.data }
+  @app.post('/clear_session', response_class=JSONResponse)
+  async def clear_session(request: Request):
+    await request.session.flush()
+    return { 'session': request.session.data }
+  return app
+
+def setup_cookie(app: FastAPI = create_app()) -> FastAPI:
   # middleware
   class CookieBackstageSettings(BaseModel):
     autoload: bool  = True
@@ -27,22 +42,10 @@ def setup_cookie(app: FastAPI = FastAPI()) -> FastAPI:
   def get_backstage_config():
     return CookieBackstageSettings()
   app.add_middleware(BackstageSeshMiddleware)
-  # routes
-  @app.get('/view_session', response_class=JSONResponse)
-  async def view_session(request: Request):
-    return { 'session': request.session.data }
-  @app.post('/update_session', response_class=JSONResponse)
-  async def update_session(request: Request):
-    request.session.update(await request.json())
-    return { 'session': request.session.data }
-  @app.post('/clear_session', response_class=JSONResponse)
-  async def clear_session(request: Request):
-    await request.session.flush()
-    return { 'session': request.session.data }
   # returns
   return app
 
-def setup_memory(app: FastAPI = FastAPI()) -> FastAPI:
+def setup_memory(app: FastAPI = create_app()) -> FastAPI:
   # middleware
   class InMemoryBackstageSettings(BaseModel):
     autoload: bool           = True
@@ -51,43 +54,23 @@ def setup_memory(app: FastAPI = FastAPI()) -> FastAPI:
   def get_backstage_config():
     return InMemoryBackstageSettings()
   app.add_middleware(BackstageSeshMiddleware)
-  # routes
-  @app.get('/view_session', response_class=JSONResponse)
-  async def view_session(request: Request):
-    return { 'session': request.session.data }
-  @app.post('/update_session', response_class=JSONResponse)
-  async def update_session(request: Request):
-    request.session.update(await request.json())
-    return { 'session': request.session.data }
-  @app.post('/clear_session', response_class=JSONResponse)
-  async def clear_session(request: Request):
-    await request.session.flush()
-    return { 'session': request.session.data }
   # returns
   return app
 
-def setup_secondapp(second_app: FastAPI = FastAPI()) -> FastAPI:
-  app: FastAPI = setup_cookie()
-  # middleware
-  class CookieBackstageSettings(BaseModel):
-    autoload: bool  = True
-    secret_key: str = 'example'
-  @BackstageSeshMiddleware.load_config
-  def get_backstage_config():
-    return CookieBackstageSettings()
-  second_app.add_middleware(BackstageSeshMiddleware)
-  # routes
-  @second_app.get('/view_session', response_class=JSONResponse)
-  async def view_session(request: Request):
-    return { 'session': request.session.data }
-  @second_app.post('/update_session', response_class=JSONResponse)
-  async def update_session(request: Request):
-    request.session.update(await request.json())
-    return { 'session': request.session.data }
-  @second_app.post('/clear_session', response_class=JSONResponse)
-  async def clear_session(request: Request):
-    await request.session.flush()
-    return { 'session': request.session.data }
+def setup_secondapp(app: FastAPI = create_app()) -> FastAPI:
+  second_app: FastAPI = setup_cookie()
   # returns
   app.mount('/second_app', second_app)
+  return app
+
+def setup_httpsonly(app: FastAPI = create_app()) -> FastAPI:
+  # middleware
+  class HttpsOnlyCookieSettings(BaseModel):
+    autoload: bool   = True
+    secret_key: str  = 'asecrettoeverybody'
+    https_only: bool = True
+  @BackstageSeshMiddleware.load_config
+  def get_backstage_config(): return HttpsOnlyCookieSettings()
+  app.add_middleware(BackstageSeshMiddleware)
+  # returns
   return app
