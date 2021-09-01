@@ -17,10 +17,10 @@ from fastapi.responses import Response
 from fastapi.testclient import TestClient
 ### Local Modules ###
 from . import (
-  setup_cookie, setup_httpsonly, setup_memory, setup_secondapp
+  setup_cookie, setup_instantexpiry, setup_httpsonly, setup_memory, setup_secondapp
 )
 
-@pytest.mark.parametrize('setup', [setup_cookie, setup_memory])
+@pytest.mark.parametrize('setup', [ setup_cookie, setup_memory ])
 def test_session(setup: Callable):
   client: TestClient     = TestClient(setup())
   response: Response     = client.get('/view_session')
@@ -39,14 +39,14 @@ def test_session(setup: Callable):
   response: Response     = client.get('/view_session')
   assert response.json() == { 'session': {} }
 
-@pytest.mark.parametrize('setup', [setup_cookie, setup_memory])
+@pytest.mark.parametrize('setup', [ setup_cookie, setup_memory ])
 def test_empty_session(setup: Callable):
   client: TestClient     = TestClient(setup())
   headers: dict          = { 'cookie': 'session=someid' }
   response: Response     = client.get('/view_session', headers=headers)
   assert response.json() == {'session': {}}
 
-@pytest.mark.parametrize('setup', [setup_cookie, setup_memory])
+@pytest.mark.parametrize('setup', [ setup_instantexpiry ])
 def test_session_expires(setup: Callable):
   client: TestClient         = TestClient(setup())
   response: Response         = client.post('/update_session', json={'some': 'data'})
@@ -54,7 +54,7 @@ def test_session_expires(setup: Callable):
   # requests removes expired cookies from response.cookies, we need to
   # fetch session id from the headers and pass it explicitly
   expired_cookie_header      = response.headers['set-cookie']
-  expired_session_value: str = search(r'session=([^;]*);', expired_cookie_header)[1]
+  expired_session_value: str = search(r'fastapi-backstage-sesh=([^;]*);', expired_cookie_header)[1]
   response: Response         = client.get('/view_session', cookies={'session': expired_session_value})
   assert response.json()     == {'session': {}}
 

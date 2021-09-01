@@ -74,3 +74,15 @@ def setup_httpsonly(app: FastAPI = create_app()) -> FastAPI:
   app.add_middleware(BackstageSeshMiddleware)
   # returns
   return app
+
+def setup_instantexpiry(app: FastAPI = create_app()) -> FastAPI:
+  # middleware
+  class InstantExpiryCookieSettings(BaseModel):
+    autoload: bool  = True
+    secret_key: str = 'asecrettoeverybody'
+    max_age: int    = -1
+  @BackstageSeshMiddleware.load_config
+  def get_backstage_config(): return InstantExpiryCookieSettings()
+  app.add_middleware(BackstageSeshMiddleware)
+  # returns
+  return app
