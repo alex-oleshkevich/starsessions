@@ -9,7 +9,7 @@
 # HISTORY:
 #*************************************************************
 ### Standard Packages ###
-from re import Match, search
+from re import search
 from typing import Callable
 ### Third-Party Packages ###
 import pytest
@@ -17,19 +17,19 @@ from fastapi.responses import Response
 from fastapi.testclient import TestClient
 ### Local Modules ###
 from . import (
-  testclient_cookie, testclient_memory, testclient_secondapp
+  setup_cookie, setup_memory, setup_secondapp
 )
 
-@pytest.mark.parametrize('setup', [testclient_cookie, testclient_memory])
+@pytest.mark.parametrize('setup', [setup_cookie, setup_memory])
 def test_session(setup: Callable):
-  client: TestClient     = setup()
+  client: TestClient     = TestClient(setup())
   response: Response     = client.get('/view_session')
   assert response.json() == {'session': {}}
   response: Response     = client.post('/update_session', json={'some': 'data'})
   assert response.json() == {'session': {'some': 'data'}}
   # check cookie max-age
   set_cookie             = response.headers['set-cookie']
-  max_age_matches: Match = search(r'; Max-Age=([0-9]+);', set_cookie)
+  max_age_matches: str   = search(r'; Max-Age=([0-9]+);', set_cookie)
   assert max_age_matches is not None
   assert int(max_age_matches[1]) == 14 * 24 * 3600
   response: Response     = client.get('/view_session')
@@ -39,24 +39,24 @@ def test_session(setup: Callable):
   response: Response     = client.get('/view_session')
   assert response.json() == { 'session': {} }
 
-@pytest.mark.parametrize('setup', [testclient_cookie, testclient_memory])
+@pytest.mark.parametrize('setup', [setup_cookie, setup_memory])
 def test_empty_session(setup: Callable):
-  client: TestClient     = setup()
+  client: TestClient     = TestClient(setup())
   headers: dict          = { 'cookie': 'session=someid' }
   response: Response     = client.get('/view_session', headers=headers)
   assert response.json() == {'session': {}}
 
-@pytest.mark.parametrize('setup', [testclient_cookie, testclient_memory])
+@pytest.mark.parametrize('setup', [setup_cookie, setup_memory])
 def test_session_expires(setup: Callable):
-  client: TestClient           = setup()
-  response: Response           = client.post('/update_session', json={'some': 'data'})
-  assert response.json()       == { 'session': { 'some': 'data' }}
+  client: TestClient         = TestClient(setup())
+  response: Response         = client.post('/update_session', json={'some': 'data'})
+  assert response.json()     == { 'session': { 'some': 'data' }}
   # requests removes expired cookies from response.cookies, we need to
   # fetch session id from the headers and pass it explicitly
-  expired_cookie_header        = response.headers['set-cookie']
-  expired_session_value: Match = search(r'session=([^;]*);', expired_cookie_header)[1]
-  response: Response           = client.get('/view_session', cookies={'session': expired_session_value})
-  assert response.json() == {'session': {}}
+  expired_cookie_header      = response.headers['set-cookie']
+  expired_session_value: str = search(r'session=([^;]*);', expired_cookie_header)[1]
+  response: Response         = client.get('/view_session', cookies={'session': expired_session_value})
+  assert response.json()     == {'session': {}}
 
 # @pytest.mark.parametrize('setup', [testclient_cookie, testclient_memory])
 # def test_secure_session(setup: Callable):
@@ -80,10 +80,10 @@ def test_session_expires(setup: Callable):
 #   response = secure_client.get('/view_session')
 #   assert response.json() == {'session': {}}
 
-@pytest.mark.parametrize('setup', [ testclient_secondapp ])
+@pytest.mark.parametrize('setup', [ setup_secondapp ])
 def test_session_cookie_subpath(setup: Callable):
-  client: TestClient = setup()
-  response           = client.post('/second_app/update_session', json={'some': 'data'})
+  client: TestClient = TestClient(setup())
+  response: Response = client.post('/second_app/update_session', json={'some': 'data'})
   cookie             = response.headers['set-cookie']
-  cookie_path: Match = search(r'; path=(\S+);', cookie).groups()[0]
-  assert cookie_path == '/second_app' # TODO Unfails
+  cookie_path: str   = search(r'; path=(\S+);', cookie).groups()[0]
+  assert cookie_path == '/second_app'

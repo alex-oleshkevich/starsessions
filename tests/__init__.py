@@ -12,14 +12,13 @@
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
-from fastapi.testclient import TestClient
 from pydantic import BaseModel
 ### Local Modules ###
 from fastapi_backstage_sesh import ( 
   BackstageSeshMiddleware, InMemoryBackend
 )
 
-def testclient_cookie(app: FastAPI = FastAPI()) -> TestClient:
+def setup_cookie(app: FastAPI = FastAPI()) -> FastAPI:
   # middleware
   class CookieBackstageSettings(BaseModel):
     autoload: bool  = True
@@ -41,9 +40,9 @@ def testclient_cookie(app: FastAPI = FastAPI()) -> TestClient:
     await request.session.flush()
     return { 'session': request.session.data }
   # returns
-  return TestClient(app)
+  return app
 
-def testclient_memory(app: FastAPI = FastAPI()) -> TestClient:
+def setup_memory(app: FastAPI = FastAPI()) -> FastAPI:
   # middleware
   class InMemoryBackstageSettings(BaseModel):
     autoload: bool           = True
@@ -65,10 +64,10 @@ def testclient_memory(app: FastAPI = FastAPI()) -> TestClient:
     await request.session.flush()
     return { 'session': request.session.data }
   # returns
-  return TestClient(app)
+  return app
 
-def testclient_secondapp(second_app: FastAPI = FastAPI()) -> TestClient:
-  app: TestClient = testclient_cookie()
+def setup_secondapp(second_app: FastAPI = FastAPI()) -> FastAPI:
+  app: FastAPI = setup_cookie()
   # middleware
   class CookieBackstageSettings(BaseModel):
     autoload: bool  = True
