@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "fastapi-backstage-sesh"
+version = "0.0.1"
+description = "FastAPI Middleware with simple Session implementation, plug n' playable"
+authors = ["Sitt Guruvanich <aekasitt@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.6.2"
+fastapi = "^0.68.1"
+itsdangerous = "^2.0.1"
+pydantic = "^1.8.2"
+starlette = "^0.14.2"
+uvicorn = {version = "^0.15.0", optional = true, extras = ["examples"]}
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
