@@ -13,6 +13,8 @@ pip install starsessions
 poetry add starsessions
 ```
 
+Use `redis` extra for [Redis support](#redis).
+
 ## Quick start
 
 See example application in [`examples/`](examples) directory of this repository.
