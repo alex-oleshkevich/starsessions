@@ -1,5 +1,6 @@
-from .backends import *  # noqa
+from .backends import CookieBackend, InMemoryBackend, SessionBackend
 from .middleware import SessionMiddleware
+from .serializers import JsonSerializer, Serializer
 from .session import ImproperlyConfigured, Session, SessionError, SessionNotLoaded
 
 __all__ = [
@@ -7,5 +8,10 @@ __all__ = [
     "Session",
     "SessionNotLoaded",
     "ImproperlyConfigured",
+    "Serializer",
+    "JsonSerializer",
     "SessionError",
+    "SessionBackend",
+    "InMemoryBackend",
+    "CookieBackend",
 ]
