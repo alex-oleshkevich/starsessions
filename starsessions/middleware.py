@@ -4,7 +4,8 @@ from starlette.datastructures import MutableHeaders, Secret
 from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from .session import CookieBackend, ImproperlyConfigured, Session, SessionBackend
+from . import CookieBackend, SessionBackend
+from .session import ImproperlyConfigured, Session
 
 
 class SessionMiddleware:

@@ -1,11 +1,6 @@
-import abc
-import json
 import typing
-import uuid
-from base64 import b64decode, b64encode
 
-from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
-from starlette.datastructures import Secret
+from .backends.base import SessionBackend
 
 
 class SessionError(Exception):
@@ -18,90 +13,6 @@ class SessionNotLoaded(SessionError):
 
 class ImproperlyConfigured(SessionError):
     """Exception is raised when some settings are missing or misconfigured."""
-
-
-class SessionBackend(abc.ABC):
-    """Base class for session backends."""
-
-    @abc.abstractmethod
-    async def read(
-        self, session_id: str
-    ) -> typing.Dict[str, typing.Any]:  # pragma: no cover
-        """Read session data from the storage."""
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    async def write(
-        self, data: typing.Dict, session_id: typing.Optional[str] = None
-    ) -> str:  # pragma: no cover
-        """Write session data to the storage."""
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    async def remove(self, session_id: str) -> None:  # pragma: no cover
-        """Remove session data from the storage."""
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    async def exists(self, session_id: str) -> bool:  # pragma: no cover
-        """Test if storage contains session data for a given session_id."""
-        raise NotImplementedError()
-
-    async def generate_id(self) -> str:
-        """Generate a new session id."""
-        return str(uuid.uuid4())
-
-
-class CookieBackend(SessionBackend):
-    """Stores session data in the browser's cookie as a signed string."""
-
-    def __init__(self, secret_key: typing.Union[str, Secret], max_age: int):
-        self._signer = TimestampSigner(str(secret_key))
-        self._max_age = max_age
-
-    async def read(self, session_id: str) -> typing.Dict:
-        """A session_id is a signed session value."""
-        try:
-            data = self._signer.unsign(session_id, max_age=self._max_age)
-            return json.loads(b64decode(data))
-        except (BadSignature, SignatureExpired):
-            return {}
-
-    async def write(
-        self, data: typing.Dict, session_id: typing.Optional[str] = None
-    ) -> str:
-        """The data is a session id in this backend."""
-        encoded_data = b64encode(json.dumps(data).encode("utf-8"))
-        return self._signer.sign(encoded_data).decode("utf-8")
-
-    async def remove(self, session_id: str) -> None:
-        """Session data stored on client side - no way to remove it."""
-
-    async def exists(self, session_id: str) -> bool:
-        return False
-
-
-class InMemoryBackend(SessionBackend):
-    """Stores session data in a dictionary."""
-
-    def __init__(self) -> None:
-        self.data: dict = {}
-
-    async def read(self, session_id: str) -> typing.Dict:
-        return self.data.get(session_id, {}).copy()
-
-    async def write(
-        self, data: typing.Dict, session_id: typing.Optional[str] = None
-    ) -> str:
-        session_id = session_id or await self.generate_id()
-        self.data[session_id] = data
-        return session_id
-
-    async def remove(self, session_id: str) -> None:
-        del self.data[session_id]
-
-    async def exists(self, session_id: str) -> bool:
-        return session_id in self.data
 
 
 class Session:
