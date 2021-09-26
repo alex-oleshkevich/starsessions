@@ -1,6 +1,5 @@
 import typing
 from base64 import b64decode, b64encode
-
 from itsdangerous import BadSignature, TimestampSigner
 from starlette.datastructures import Secret
 
@@ -29,9 +28,7 @@ class CookieBackend(SessionBackend):
         except BadSignature:
             return {}
 
-    async def write(
-        self, data: typing.Dict, session_id: typing.Optional[str] = None
-    ) -> str:
+    async def write(self, data: typing.Dict, session_id: typing.Optional[str] = None) -> str:
         """The data is a session id in this backend."""
         encoded_data = b64encode(self._serializer.serialize(data).encode("utf-8"))
         return self._signer.sign(encoded_data).decode("utf-8")

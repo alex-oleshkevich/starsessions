@@ -7,16 +7,12 @@ class SessionBackend(abc.ABC):
     """Base class for session backends."""
 
     @abc.abstractmethod
-    async def read(
-        self, session_id: str
-    ) -> typing.Dict[str, typing.Any]:  # pragma: no cover
+    async def read(self, session_id: str) -> typing.Dict[str, typing.Any]:  # pragma: no cover
         """Read session data from the storage."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write(
-        self, data: typing.Dict, session_id: typing.Optional[str] = None
-    ) -> str:  # pragma: no cover
+    async def write(self, data: typing.Dict, session_id: typing.Optional[str] = None) -> str:  # pragma: no cover
         """Write session data to the storage."""
         raise NotImplementedError()
 

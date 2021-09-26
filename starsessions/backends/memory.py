@@ -12,9 +12,7 @@ class InMemoryBackend(SessionBackend):
     async def read(self, session_id: str) -> typing.Dict:
         return self.data.get(session_id, {}).copy()
 
-    async def write(
-        self, data: typing.Dict, session_id: typing.Optional[str] = None
-    ) -> str:
+    async def write(self, data: typing.Dict, session_id: typing.Optional[str] = None) -> str:
         session_id = session_id or await self.generate_id()
         self.data[session_id] = data
         return session_id

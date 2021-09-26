@@ -1,29 +1,29 @@
-import re
-
 import pytest
+import re
 from starlette.applications import Starlette
+from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.testclient import TestClient
 
 from starsessions import ImproperlyConfigured, InMemoryBackend, SessionMiddleware
 
 
-def view_session(request):
-    return JSONResponse({"session": request.session.data})
+def view_session(request: Request) -> JSONResponse:
+    return JSONResponse({"session": dict(request.session)})
 
 
-async def update_session(request):
+async def update_session(request: Request) -> JSONResponse:
     data = await request.json()
     request.session.update(data)
-    return JSONResponse({"session": request.session.data})
+    return JSONResponse({"session": dict(request.session)})
 
 
-async def clear_session(request):
+async def clear_session(request: Request) -> JSONResponse:
     request.session.clear()
-    return JSONResponse({"session": request.session.data})
+    return JSONResponse({"session": dict(request.session)})
 
 
-def create_app():
+def create_app() -> Starlette:
     app = Starlette()
     app.add_route("/view_session", view_session)
     app.add_route("/update_session", update_session, methods=["POST"])
@@ -31,7 +31,7 @@ def create_app():
     return app
 
 
-def test_session():
+def test_session() -> None:
     app = create_app()
     app.add_middleware(SessionMiddleware, secret_key="example", autoload=True)
     client = TestClient(app)
@@ -58,7 +58,7 @@ def test_session():
     assert response.json() == {"session": {}}
 
 
-def test_empty_session():
+def test_empty_session() -> None:
     app = create_app()
     app.add_middleware(SessionMiddleware, secret_key="example", autoload=True)
 
@@ -68,11 +68,9 @@ def test_empty_session():
     assert response.json() == {"session": {}}
 
 
-def test_session_expires():
+def test_session_expires() -> None:
     app = create_app()
-    app.add_middleware(
-        SessionMiddleware, secret_key="example", max_age=-1, autoload=True
-    )
+    app.add_middleware(SessionMiddleware, secret_key="example", max_age=-1, autoload=True)
     client = TestClient(app)
 
     response = client.post("/update_session", json={"some": "data"})
@@ -81,16 +79,16 @@ def test_session_expires():
     # requests removes expired cookies from response.cookies, we need to
     # fetch session id from the headers and pass it explicitly
     expired_cookie_header = response.headers["set-cookie"]
-    expired_session_value = re.search(r"session=([^;]*);", expired_cookie_header)[1]
+    match = re.search(r"session=([^;]*);", expired_cookie_header)
+    assert match
+    expired_session_value = match[1]
     response = client.get("/view_session", cookies={"session": expired_session_value})
     assert response.json() == {"session": {}}
 
 
-def test_secure_session():
+def test_secure_session() -> None:
     app = create_app()
-    app.add_middleware(
-        SessionMiddleware, secret_key="example", https_only=True, autoload=True
-    )
+    app.add_middleware(SessionMiddleware, secret_key="example", https_only=True, autoload=True)
     secure_client = TestClient(app, base_url="https://testserver")
     unsecure_client = TestClient(app, base_url="http://testserver")
 
@@ -119,7 +117,7 @@ def test_secure_session():
     assert response.json() == {"session": {}}
 
 
-def test_session_cookie_subpath():
+def test_session_cookie_subpath() -> None:
     app = create_app()
     second_app = create_app()
     second_app.add_middleware(SessionMiddleware, secret_key="example", autoload=True)
@@ -127,17 +125,19 @@ def test_session_cookie_subpath():
     client = TestClient(app, base_url="http://testserver/second_app")
     response = client.post("second_app/update_session", json={"some": "data"})
     cookie = response.headers["set-cookie"]
-    cookie_path = re.search(r"; path=(\S+);", cookie).groups()[0]
+    match = re.search(r"; path=(\S+);", cookie)
+    assert match
+    cookie_path = match.groups()[0]
     assert cookie_path == "/second_app"
 
 
-def test_session_wants_secret_key():
+def test_session_wants_secret_key() -> None:
     with pytest.raises(ImproperlyConfigured):
         app = create_app()
         app.add_middleware(SessionMiddleware)
 
 
-def test_session_custom_backend():
+def test_session_custom_backend() -> None:
     backend = InMemoryBackend()
     app = create_app()
     app.add_middleware(SessionMiddleware, backend=backend, autoload=True)

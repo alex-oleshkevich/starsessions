@@ -10,7 +10,7 @@ Access localhost:8000/set to set test session data, and
 access localhost:8000/clean to clear session data
 """
 import datetime
-
+import typing as t
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -23,7 +23,7 @@ app.add_middleware(SessionMiddleware, secret_key='secret', autoload=True)
 
 
 @app.get('/', response_class=JSONResponse)
-async def homepage(request: Request):
+async def homepage(request: Request) -> t.Mapping:
     '''
     Access this view (GET '/') to display session contents.
     '''
@@ -31,7 +31,7 @@ async def homepage(request: Request):
 
 
 @app.get('/set', response_class=RedirectResponse)
-async def set_time(request: Request):
+async def set_time(request: Request) -> str:
     '''
     Access this view (GET '/set') to set session contents.
     '''
@@ -40,7 +40,7 @@ async def set_time(request: Request):
 
 
 @app.get('/clean', response_class=RedirectResponse)
-async def clean(request: Request):
+async def clean(request: Request) -> str:
     '''
     Access this view (GET '/clean') to remove all session contents.
     '''

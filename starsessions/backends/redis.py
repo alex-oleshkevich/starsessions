@@ -1,6 +1,5 @@
-import typing
-
 import aioredis
+import typing
 
 from ..serializers import JsonSerializer, Serializer
 from .base import SessionBackend
@@ -15,9 +14,7 @@ class RedisBackend(SessionBackend):
         connection: aioredis.Redis = None,
         serializer: Serializer = None,
     ) -> None:
-        assert (
-            url or connection
-        ), 'Either "url" or "connection" arguments must be provided.'
+        assert url or connection, 'Either "url" or "connection" arguments must be provided.'
         self._serializer = serializer or JsonSerializer()
         self._connection = connection or aioredis.from_url(url)
 
@@ -27,9 +24,7 @@ class RedisBackend(SessionBackend):
             return {}
         return self._serializer.deserialize(value)
 
-    async def write(
-        self, data: typing.Dict, session_id: typing.Optional[str] = None
-    ) -> str:
+    async def write(self, data: typing.Dict, session_id: typing.Optional[str] = None) -> str:
         session_id = session_id or await self.generate_id()
         await self._connection.set(session_id, self._serializer.serialize(data))
         return session_id

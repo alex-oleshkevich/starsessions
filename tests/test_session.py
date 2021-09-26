@@ -1,10 +1,11 @@
 import pytest
+from unittest import mock
 
-from starsessions import Session, SessionNotLoaded
+from starsessions import InMemoryBackend, Session, SessionBackend, SessionNotLoaded
 
 
 @pytest.mark.asyncio
-async def test_session_load(in_memory, session_payload):
+async def test_session_load(in_memory: SessionBackend, session_payload: dict) -> None:
     await in_memory.write(session_payload, "session_id")
 
     session = Session(in_memory, "session_id")
@@ -13,14 +14,14 @@ async def test_session_load(in_memory, session_payload):
 
 
 @pytest.mark.asyncio
-async def test_session_load_with_new_session(in_memory, session_payload):
+async def test_session_load_with_new_session(in_memory: SessionBackend, session_payload: dict) -> None:
     session = Session(in_memory)
     await session.load()
     assert len(session.keys()) == 0
 
 
 @pytest.mark.asyncio
-async def test_session_subsequent_load(in_memory):
+async def test_session_subsequent_load(in_memory: SessionBackend) -> None:
     """It should return the cached data on any sequential call to load()."""
     await in_memory.write(dict(key="value"), "session_id")
 
@@ -38,7 +39,7 @@ async def test_session_subsequent_load(in_memory):
 
 
 @pytest.mark.asyncio
-async def test_session_persist(in_memory):
+async def test_session_persist(in_memory: InMemoryBackend) -> None:
     session = Session(in_memory, "session_id")
     await session.load()
     session["key"] = "value"
@@ -51,17 +52,17 @@ async def test_session_persist(in_memory):
 
 
 @pytest.mark.asyncio
-async def test_session_persist_generates_id(in_memory, in_memory_session):
-    async def _generate_id():
+async def test_session_persist_generates_id(in_memory: SessionBackend, in_memory_session: Session) -> None:
+    async def _generate_id() -> str:
         return "new_session_id"
 
-    in_memory.generate_id = _generate_id
-    await in_memory_session.persist()
-    assert in_memory_session.session_id == "new_session_id"
+    with mock.patch.object(in_memory, 'generate_id', _generate_id):
+        await in_memory_session.persist()
+        assert in_memory_session.session_id == "new_session_id"
 
 
 @pytest.mark.asyncio
-async def test_session_delete(in_memory):
+async def test_session_delete(in_memory: SessionBackend) -> None:
     await in_memory.write({}, "session_id")
 
     session = Session(in_memory, "session_id")
@@ -83,7 +84,7 @@ async def test_session_delete(in_memory):
 
 
 @pytest.mark.asyncio
-async def test_session_flush(in_memory):
+async def test_session_flush(in_memory: SessionBackend) -> None:
     await in_memory.write({"key": "value"}, "session_id")
 
     session = Session(in_memory, "session_id")
@@ -103,7 +104,7 @@ async def test_session_flush(in_memory):
 
 
 @pytest.mark.asyncio
-async def test_session_regenerate_id(in_memory):
+async def test_session_regenerate_id(in_memory: SessionBackend) -> None:
     session = Session(in_memory, "session_id")
     new_id = await session.regenerate_id()
     assert session.session_id == new_id
@@ -111,17 +112,17 @@ async def test_session_regenerate_id(in_memory):
     assert session.is_modified is True
 
 
-def test_session_keys(in_memory_session):
+def test_session_keys(in_memory_session: Session) -> None:
     in_memory_session["key"] = True
     assert list(in_memory_session.keys()) == ["key"]
 
 
-def test_session_values(in_memory_session):
+def test_session_values(in_memory_session: Session) -> None:
     in_memory_session["key"] = "value"
     assert list(in_memory_session.values()) == ["value"]
 
 
-def test_session_items(in_memory_session):
+def test_session_items(in_memory_session: Session) -> None:
     in_memory_session["key"] = "value"
     in_memory_session["key2"] = "value2"
     assert list(in_memory_session.items()) == [
@@ -130,58 +131,58 @@ def test_session_items(in_memory_session):
     ]
 
 
-def test_session_pop(in_memory_session):
+def test_session_pop(in_memory_session: Session) -> None:
     in_memory_session["key"] = "value"
     in_memory_session.pop("key")
     assert "key" not in in_memory_session
     assert in_memory_session.is_modified
 
 
-def test_session_get(in_memory_session):
+def test_session_get(in_memory_session: Session) -> None:
     in_memory_session["key"] = "value"
     assert in_memory_session.get("key") == "value"
     assert in_memory_session.get("key2", "miss") == "miss"
     assert in_memory_session.get("key3") is None
 
 
-def test_session_setdefault(in_memory_session):
+def test_session_setdefault(in_memory_session: Session) -> None:
     in_memory_session.setdefault("key", "value")
     assert in_memory_session.get("key") == "value"
     assert in_memory_session.is_modified is True
 
 
-def test_session_clear(in_memory_session):
+def test_session_clear(in_memory_session: Session) -> None:
     in_memory_session["key"] = "value"
     in_memory_session.clear()
     assert in_memory_session.is_empty is True
     assert in_memory_session.is_modified is True
 
 
-def test_session_update(in_memory_session):
+def test_session_update(in_memory_session: Session) -> None:
     in_memory_session.update({"key": "value"})
     assert "key" in in_memory_session
     assert in_memory_session.is_modified is True
 
 
-def test_session_setitem_and_contains(in_memory_session):
+def test_session_setitem_and_contains(in_memory_session: Session) -> None:
     # set item
     in_memory_session["key"] = "value"  # __setitem__
     assert "key" in in_memory_session  # __contain__
     assert in_memory_session.is_modified is True
 
 
-def test_session_getitem(in_memory_session):
+def test_session_getitem(in_memory_session: Session) -> None:
     in_memory_session["key"] = "value"  # __getitem__
     assert in_memory_session["key"] == "value"
 
 
-def test_session_delitem(in_memory_session):
+def test_session_delitem(in_memory_session: Session) -> None:
     in_memory_session["key"] = "value"
     del in_memory_session["key"]  # __delitem__
     assert "key" not in in_memory_session
 
 
-def test_session_denies_access_if_not_loaded(in_memory):
+def test_session_denies_access_if_not_loaded(in_memory: SessionBackend) -> None:
     session = Session(in_memory)
     with pytest.raises(SessionNotLoaded):
         session.data.keys()

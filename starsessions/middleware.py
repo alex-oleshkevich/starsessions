@@ -1,5 +1,4 @@
 import typing
-
 from starlette.datastructures import MutableHeaders, Secret
 from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -23,9 +22,7 @@ class SessionMiddleware:
         self.app = app
         if backend is None:
             if secret_key is None:
-                raise ImproperlyConfigured(
-                    "CookieBackend requires secret_key argument."
-                )
+                raise ImproperlyConfigured("CookieBackend requires secret_key argument.")
             backend = CookieBackend(secret_key, max_age)
 
         self.backend = backend
