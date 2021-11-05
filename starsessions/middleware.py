@@ -1,5 +1,6 @@
-import typing
-from starlette.datastructures import MutableHeaders, Secret
+import re
+import typing as t
+from starlette.datastructures import URL, MutableHeaders, Secret
 from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -16,9 +17,16 @@ class SessionMiddleware:
         same_site: str = "lax",
         https_only: bool = False,
         autoload: bool = False,
-        secret_key: typing.Union[str, Secret] = None,
+        secret_key: t.Union[str, Secret] = None,
         backend: SessionBackend = None,
+        exclude_patterns: t.List[t.Union[str, t.Pattern]] = None,
+        include_patterns: t.List[t.Union[str, t.Pattern]] = None,
     ) -> None:
+        if exclude_patterns is not None and include_patterns is not None:
+            raise ValueError('"exclude_patterns" and "include_patterns" are mutually exclusive.')
+        self._exclude_patterns = exclude_patterns or []
+        self._include_patterns = include_patterns or []
+
         self.app = app
         if backend is None:
             if secret_key is None:
@@ -42,7 +50,7 @@ class SessionMiddleware:
         session_id = connection.cookies.get(self.session_cookie, None)
 
         scope["session"] = Session(self.backend, session_id)
-        if self.autoload:
+        if self._should_autoload(scope):
             await scope["session"].load()
 
         async def send_wrapper(message: Message) -> None:
@@ -74,3 +82,14 @@ class SessionMiddleware:
             await send(message)
 
         await self.app(scope, receive, send_wrapper)
+
+    def _should_autoload(self, scope: Scope) -> bool:
+        if self.autoload:
+            return True
+
+        url = URL(scope=scope)
+        for pattern in self._exclude_patterns:
+            if re.search(pattern, str(url)):
+                return True
+
+        return bool(self._include_patterns and any(re.search(pattern, str(url)) for pattern in self._include_patterns))

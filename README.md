@@ -45,6 +45,25 @@ You can change this behavior by passing `autoload=True` to your middleware setti
 Middleware(SessionMiddleware, secret_key='TOP SECRET', autoload=True)
 ```
 
+### Autoload session for specific paths
+
+Alternatively, you can pass a list of patterns that should have session autoloaded using `include_patterns` argument:
+
+```python
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starsessions import SessionMiddleware
+
+middleware = [
+    Middleware(SessionMiddleware, secret_key='TOP SECRET', include_patterns=['/admin']),
+]
+
+app = Starlette(middleware=middleware, **other_options)
+```
+
+There is a counterpart argument called `exclude_patterns`. It works in the same way but defines paths that should NOT
+have the session autoloaded.
+
 ### Default session backend
 
 The default backend is `CookieBackend`. You don't need to configure it just pass `secret_key` argument and the backend

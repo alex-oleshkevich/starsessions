@@ -146,3 +146,45 @@ def test_session_custom_backend() -> None:
     client = TestClient(app)
     response = client.get("/view_session", headers=headers)
     assert response.json() == {"session": {}}
+
+
+def test_middleware_excludes_url_patterns() -> None:
+    async def session_view(request: Request) -> JSONResponse:
+        return JSONResponse({'loaded': getattr(request.session, 'is_loaded', False)})
+
+    app = create_app()
+    app.add_route('/private', session_view)
+    app.add_route('/public', session_view)
+    app.add_middleware(SessionMiddleware, secret_key='key!', exclude_patterns=['/public'])
+
+    test_client = TestClient(app)
+    response = test_client.get('/public')
+    assert response.json()['loaded'] is True
+
+    response = test_client.get('/private')
+    assert response.json()['loaded'] is False
+
+
+def test_middleware_includes_url_patterns() -> None:
+    async def session_view(request: Request) -> JSONResponse:
+        return JSONResponse({'loaded': getattr(request.session, 'is_loaded', False)})
+
+    app = create_app()
+    app.add_route('/private', session_view)
+    app.add_route('/public', session_view)
+    app.add_middleware(SessionMiddleware, secret_key='key!', include_patterns=['/private'])
+
+    test_client = TestClient(app)
+    response = test_client.get('/public')
+    assert response.json()['loaded'] is False
+
+    response = test_client.get('/private')
+    assert response.json()['loaded'] is True
+
+
+def test_middleware_raises_if_both_include_and_exclude_patterns_passed() -> None:
+    with pytest.raises(ValueError) as ex:
+        app = create_app()
+        app.add_middleware(SessionMiddleware, secret_key='key!', include_patterns=['/'], exclude_patterns=['/'])
+
+    assert str(ex.value) == '"exclude_patterns" and "include_patterns" are mutually exclusive.'
