@@ -1,6 +1,6 @@
 import abc
+import secrets
 import typing
-import uuid
 
 
 class SessionBackend(abc.ABC):
@@ -28,4 +28,4 @@ class SessionBackend(abc.ABC):
 
     async def generate_id(self) -> str:
         """Generate a new session id."""
-        return str(uuid.uuid4())
+        return secrets.token_hex(128)
