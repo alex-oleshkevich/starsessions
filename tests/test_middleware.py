@@ -166,3 +166,29 @@ def test_session_clears_on_tab_close() -> None:
     client.cookies.clear_session_cookies()
     response = client.get("/view_session")
     assert response.json() == {"session": {}}
+
+
+def test_session_cookie_path() -> None:
+    app = create_app()
+    app.add_middleware(SessionMiddleware, secret_key="example", autoload=True, path='/somepath')
+    client = TestClient(app)
+
+    response = client.post("/update_session", json={"some": "data"})
+    assert response.json() == {"session": {"some": "data"}}
+
+    # check cookie max-age
+    set_cookie = response.headers["set-cookie"]
+    assert 'path=/somepath' in set_cookie
+
+
+def test_session_cookie_domain() -> None:
+    app = create_app()
+    app.add_middleware(SessionMiddleware, secret_key="example", autoload=True, domain='example.com')
+    client = TestClient(app)
+
+    response = client.post("/update_session", json={"some": "data"})
+    assert response.json() == {"session": {"some": "data"}}
+
+    # check cookie max-age
+    set_cookie = response.headers["set-cookie"]
+    assert 'Domain=example.com' in set_cookie

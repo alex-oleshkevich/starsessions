@@ -16,6 +16,8 @@ class SessionMiddleware:
         same_site: str = "lax",
         https_only: bool = False,
         autoload: bool = False,
+        domain: str = None,
+        path: str = None,
         secret_key: typing.Union[str, Secret] = None,
         backend: SessionBackend = None,
     ) -> None:
@@ -29,6 +31,8 @@ class SessionMiddleware:
         self.session_cookie = session_cookie
         self.max_age = max_age
         self.autoload = autoload
+        self.domain = domain
+        self.path = path
         self.security_flags = "httponly; samesite=" + same_site
         if https_only:  # Secure flag can be used with HTTPS only
             self.security_flags += "; secure"
@@ -47,7 +51,7 @@ class SessionMiddleware:
 
         async def send_wrapper(message: Message) -> None:
             if message["type"] == "http.response.start":
-                path = scope.get("root_path", "") or "/"
+                path = self.path or scope.get("root_path", "") or "/"
                 if scope["session"].is_modified:
                     # We have session data to persist (data was changed, cleared, etc).
                     nonlocal session_id
@@ -60,15 +64,11 @@ class SessionMiddleware:
                     ]
                     if self.max_age:
                         header_parts.append(f'Max-Age={self.max_age}')
+                    if self.domain:
+                        header_parts.append(f'Domain={self.domain}')
+
                     header_parts.append(self.security_flags)
                     header_value = '; '.join(header_parts)
-                    # header_value = "%s=%s; path=%s; Max-Age=%d; %s" % (
-                    #     self.session_cookie,
-                    #     session_id,
-                    #     path,
-                    #     self.max_age,
-                    #     self.security_flags,
-                    # )
                     headers.append("Set-Cookie", header_value)
                 elif scope["session"].is_loaded and scope["session"].is_empty:
                     # no interactions to session were done
