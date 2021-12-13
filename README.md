@@ -51,17 +51,17 @@ You can pass `path` arguments to enable session cookies on specific URLs. For ex
 for admin area (which is hosted under `/admin` path prefix), use `path="/admin"` middleware argument.
 
 ```python
-SessionMiddleware, path = '/admin', ...)
+Middleware(SessionMiddleware, path = '/admin', ...)
 ```
 
 All other URLs not matching value of `path` will not receive cookie thus session will be unavailable.
 
 ### Cookie domain
 
-You can also specify which hosts can receive a cookie by passing `domain` argument to the middleware. Middleware(
+You can also specify which hosts can receive a cookie by passing `domain` argument to the middleware.
 
 ```python
-SessionMiddleware, domain = 'example.com', ...)
+Middleware(SessionMiddleware, domain = 'example.com', ...)
 ```
 
 > Note, this makes session cookie available for subdomains too.

@@ -71,14 +71,15 @@ class SessionMiddleware:
                     header_value = '; '.join(header_parts)
                     headers.append("Set-Cookie", header_value)
                 elif scope["session"].is_loaded and scope["session"].is_empty:
-                    # no interactions to session were done
-                    headers = MutableHeaders(scope=message)
-                    header_value = "{}={}; {}".format(
-                        self.session_cookie,
-                        f"null; path={path}; expires=Thu, 01 Jan 1970 00:00:00 GMT;",
-                        self.security_flags,
-                    )
-                    headers.append("Set-Cookie", header_value)
+                    if not self.path or self.path and scope['path'].startswith(self.path):
+                        # no interactions to session were done
+                        headers = MutableHeaders(scope=message)
+                        header_value = "{}={}; {}".format(
+                            self.session_cookie,
+                            f"null; path={path}; expires=Thu, 01 Jan 1970 00:00:00 GMT;",
+                            self.security_flags,
+                        )
+                        headers.append("Set-Cookie", header_value)
             await send(message)
 
         await self.app(scope, receive, send_wrapper)
