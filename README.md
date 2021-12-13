@@ -45,6 +45,36 @@ You can change this behavior by passing `autoload=True` to your middleware setti
 Middleware(SessionMiddleware, secret_key='TOP SECRET', autoload=True)
 ```
 
+### Cookie path
+
+You can pass `path` arguments to enable session cookies on specific URLs. For example, to activate session cookie only
+for admin area (which is hosted under `/admin` path prefix), use `path="/admin"` middleware argument.
+
+```python
+SessionMiddleware, path = '/admin', ...)
+```
+
+All other URLs not matching value of `path` will not receive cookie thus session will be unavailable.
+
+### Cookie domain
+
+You can also specify which hosts can receive a cookie by passing `domain` argument to the middleware. Middleware(
+
+```python
+SessionMiddleware, domain = 'example.com', ...)
+```
+
+> Note, this makes session cookie available for subdomains too.
+> For example, when you set `domain=example.com` then session cookie will be available on subdomains like `app.example.com`.
+
+### Session-only cookies
+
+If you want session cookie to automatically remove from tbe browser when tab closes then set `max_age` to `0`:
+
+```python
+Middleware(SessionMiddleware, max_age=0, ...)
+```
+
 ### Default session backend
 
 The default backend is `CookieBackend`. You don't need to configure it just pass `secret_key` argument and the backend
