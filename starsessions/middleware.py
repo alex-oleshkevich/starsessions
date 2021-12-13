@@ -54,13 +54,21 @@ class SessionMiddleware:
                     session_id = await scope["session"].persist()
 
                     headers = MutableHeaders(scope=message)
-                    header_value = "%s=%s; path=%s; Max-Age=%d; %s" % (
-                        self.session_cookie,
-                        session_id,
-                        path,
-                        self.max_age,
-                        self.security_flags,
-                    )
+                    header_parts = [
+                        f'{self.session_cookie}={session_id}',
+                        f'path={path}',
+                    ]
+                    if self.max_age:
+                        header_parts.append(f'Max-Age={self.max_age}')
+                    header_parts.append(self.security_flags)
+                    header_value = '; '.join(header_parts)
+                    # header_value = "%s=%s; path=%s; Max-Age=%d; %s" % (
+                    #     self.session_cookie,
+                    #     session_id,
+                    #     path,
+                    #     self.max_age,
+                    #     self.security_flags,
+                    # )
                     headers.append("Set-Cookie", header_value)
                 elif scope["session"].is_loaded and scope["session"].is_empty:
                     # no interactions to session were done

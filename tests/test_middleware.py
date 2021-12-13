@@ -146,3 +146,23 @@ def test_session_custom_backend() -> None:
     client = TestClient(app)
     response = client.get("/view_session", headers=headers)
     assert response.json() == {"session": {}}
+
+
+def test_session_clears_on_tab_close() -> None:
+    app = create_app()
+    app.add_middleware(SessionMiddleware, secret_key="example", autoload=True, max_age=0)
+    client = TestClient(app)
+
+    response = client.get("/view_session")
+    assert response.json() == {"session": {}}
+
+    response = client.post("/update_session", json={"some": "data"})
+    assert response.json() == {"session": {"some": "data"}}
+
+    # when max_age=0 then no Max-Age cookie component expected
+    set_cookie = response.headers["set-cookie"]
+    assert 'Max-Age' not in set_cookie
+
+    client.cookies.clear_session_cookies()
+    response = client.get("/view_session")
+    assert response.json() == {"session": {}}
