@@ -26,11 +26,11 @@ class RedisBackend(SessionBackend):
                 raise ImproperlyConfigured(
                     "The redis_key argument needs to be a callable and have a session_id argument"
                 )
-        self.redis_key = redis_key_func
+        self._redis_key_func = redis_key_func
 
     def get_redis_key(self, session_id: str) -> str:
-        if self.redis_key:
-            return self.redis_key(session_id)
+        if self._redis_key_func:
+            return self._redis_key_func(session_id)
         else:
             return session_id
 
