@@ -24,7 +24,7 @@ class RedisBackend(SessionBackend):
         if redis_key_func:
             if not callable(redis_key_func) or "session_id" not in inspect.signature(redis_key_func).parameters.keys():
                 raise ImproperlyConfigured(
-                    "The redis_key argument needs to be a callable and have a session_id argument"
+                    "The redis_key_func needs to be a callable and have a session_id argument"
                 )
         self._redis_key_func = redis_key_func
 
