@@ -1,9 +1,6 @@
-import inspect
-
 import aioredis
 import typing
 
-from .. import ImproperlyConfigured
 from ..serializers import JsonSerializer, Serializer
 from .base import SessionBackend
 
@@ -22,10 +19,9 @@ class RedisBackend(SessionBackend):
         self._serializer = serializer or JsonSerializer()
         self._connection = connection or aioredis.from_url(url)
         if redis_key_func:
-            if not callable(redis_key_func) or "session_id" not in inspect.signature(redis_key_func).parameters.keys():
-                raise ImproperlyConfigured(
-                    "The redis_key_func needs to be a callable and have a session_id argument"
-                )
+            assert callable(
+                redis_key_func
+            ), "The redis_key_func needs to be a callable that takes a single string argument."
         self._redis_key_func = redis_key_func
 
     def get_redis_key(self, session_id: str) -> str:

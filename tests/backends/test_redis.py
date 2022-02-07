@@ -1,11 +1,10 @@
 import os
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict
 
 import pytest
 
-from starsessions import Session, SessionBackend, ImproperlyConfigured
+from starsessions import Session, SessionBackend
 from starsessions.backends.redis import RedisBackend
-from tests.conftest import redis_key_callable_wrong_arg_name
 
 
 @pytest.mark.asyncio
@@ -63,10 +62,7 @@ def test_session_is_modified(redis_session: Session) -> None:
     assert redis_session.is_modified is True
 
 
-@pytest.mark.parametrize("redis_key", [redis_key_callable_wrong_arg_name, "not_a_callable"])
-def test_improperly_configured_redis_key(redis_key: Any) -> None:
+def test_improperly_configured_redis_key() -> None:
     url = os.environ.get("REDIS_URL", "redis://localhost")
-    with pytest.raises(ImproperlyConfigured):
-        RedisBackend(url, redis_key_func=redis_key), {"key": "value"} if redis_key is None else {
-            redis_key("key"): "value"
-        }
+    with pytest.raises(AssertionError):
+        RedisBackend(url, redis_key_func="a_random_string")  # type: ignore[arg-type]
