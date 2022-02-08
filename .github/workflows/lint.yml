@@ -29,6 +29,15 @@ jobs:
         steps:
             -   uses: actions/checkout@v2
 
+            -   name: Cache poetry
+                uses: actions/cache@v2
+                with:
+                    path: |
+                        ~/.cache/pypoetry
+                        ~/.cache/pip
+                    key: ${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+
             -   name: Set up Python ${{ matrix.python-version }}
                 uses: actions/setup-python@v2
                 with:
@@ -46,11 +55,11 @@ jobs:
 
             -   name: Lint with mypy
                 run: |
-                    mypy starsessions/
+                    mypy --config-file pyproject.toml starsessions/
 
             -   name: Lint with black
                 run: |
-                    black --check starsessions tests
+                    black --config=pyproject.toml  --check starsessions tests
 
             -   name: Test with pytest
                 run: |

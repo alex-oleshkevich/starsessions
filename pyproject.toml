@@ -31,12 +31,12 @@ aioredis = { version = "^2.0.0", optional = true }
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
-black = { version = "^21.6b0", allow-prereleases = true }
+black = "^22.1.0"
 pytest-asyncio = "^0.15.1"
 requests = "^2.25.1"
 pytest-coverage = "^0.0"
-flake8 = "^3.9.2"
-mypy = "^0.910"
+flake8 = "^4.0.1"
+mypy = "^0.931"
 aioredis = "^2.0.0"
 
 [tool.poetry.extras]
@@ -77,8 +77,13 @@ exclude_lines = [
 [tool.mypy]
 disallow_untyped_defs = true
 ignore_missing_imports = true
+files = ["starsessions", "tests"]
+exclude = "/*venv/"
+pretty = true
 
 [tool.pytest.ini_options]
+minversion = "6.0"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
 norecursedirs = [".git", ".venv"]
 addopts = "--tb=short -s"
 testpaths = ["tests"]

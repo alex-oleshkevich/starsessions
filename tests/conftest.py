@@ -1,8 +1,7 @@
 import os
-from typing import Tuple, Dict
-
 import pytest
 from _pytest.fixtures import SubRequest
+from typing import Dict, Tuple
 
 from starsessions import CookieBackend, InMemoryBackend, Session, SessionBackend
 from starsessions.backends.redis import RedisBackend

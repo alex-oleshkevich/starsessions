@@ -1,6 +1,5 @@
-from typing import Tuple, Dict
-
 import pytest
+from typing import Dict, Tuple
 
 from starsessions import Session, SessionBackend
 from starsessions.backends.redis import RedisBackend
