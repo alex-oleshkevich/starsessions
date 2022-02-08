@@ -1,4 +1,3 @@
-import os
 from typing import Tuple, Dict
 
 import pytest
@@ -63,6 +62,5 @@ def test_session_is_modified(redis_session: Session) -> None:
 
 
 def test_improperly_configured_redis_key() -> None:
-    url = os.environ.get("REDIS_URL", "redis://localhost")
     with pytest.raises(AssertionError):
-        RedisBackend(url, redis_key_func="a_random_string")  # type: ignore[arg-type]
+        RedisBackend(redis_key_func="a_random_string")  # type: ignore[arg-type]
