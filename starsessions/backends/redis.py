@@ -14,15 +14,29 @@ class RedisBackend(SessionBackend):
         connection: aioredis.Redis = None,
         serializer: Serializer = None,
         redis_key_func: typing.Callable[[str], str] = None,
+        expire: int = None,
     ) -> None:
-        assert url or connection, 'Either "url" or "connection" arguments must be provided.'
+        """Initializes redis session backend.
+
+        Args:
+            url (str, optional): Redis URL. Defaults to None.
+            connection (aioredis.Redis, optional): aioredis connection. Defaults to None.
+            serializer (Serializer, optional): Object serializer. Defaults to None.
+            redis_key_func (typing.Callable[[str], str], optional): Customize redis key name. Example `lambda x: "session:" + x`. Defaults to None.
+            expire (int, optional): Key expiry in seconds. Redis will auto delete the session after specified time. Defaults to None.
+        """
+
+        if not (url or connection):
+            raise Exception("Either 'url' or 'connection' arguments must be provided.")
+
         self._serializer = serializer or JsonSerializer()
         self._connection = connection or aioredis.from_url(url)
         if redis_key_func:
-            assert callable(
-                redis_key_func
-            ), "The redis_key_func needs to be a callable that takes a single string argument."
+            if not callable(redis_key_func):
+                raise Exception("redis_key_func must be callable.")
+
         self._redis_key_func = redis_key_func
+        self.expire = expire
 
     def get_redis_key(self, session_id: str) -> str:
         if self._redis_key_func:
@@ -31,14 +45,22 @@ class RedisBackend(SessionBackend):
             return session_id
 
     async def read(self, session_id: str) -> typing.Dict:
-        value = await self._connection.get(self.get_redis_key(session_id))
+        key = self.get_redis_key(session_id)
+        value = await self._connection.get(key)
+
         if value is None:
             return {}
         return self._serializer.deserialize(value)
 
-    async def write(self, data: typing.Dict, session_id: typing.Optional[str] = None) -> str:
+    async def write(
+        self, data: typing.Dict, session_id: typing.Optional[str] = None
+    ) -> str:
         session_id = session_id or await self.generate_id()
-        await self._connection.set(self.get_redis_key(session_id), self._serializer.serialize(data))
+        await self._connection.set(
+            self.get_redis_key(session_id),
+            self._serializer.serialize(data),
+            ex=self.expire,
+        )
         return session_id
 
     async def remove(self, session_id: str) -> None:
