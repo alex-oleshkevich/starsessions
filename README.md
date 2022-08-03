@@ -130,6 +130,31 @@ redis = aioredis.from_url('redis://localhost')
 backend = RedisBackend(connection=redis)
 ```
 
+You can optionally include an expire time for the Redis keys. This will ensure that sessions get deleted from Redis automatically.
+
+```python
+import aioredis
+from starsessions.backends.redis import RedisBackend
+from starlette.middleware.sessions import SessionMiddleware
+
+...
+
+max_age = 60 * 60 * 24  # in seconds
+
+backend = RedisBackend("redis://localhost", expire=max_age)
+middleware = [Middleware(SessionMiddleware, backend=backend, autoload=True, max_age=max_age)]
+```
+
+Normally, the same `max_age` should be used for Redis expiry times and for the SessionMiddleware.
+Make sure you know what you're doing if you need different expiry times.
+
+It's important to note that on every session write, the Redis expiry resets.
+For example, if you set the Redis expire time for 10 seconds, and you perform another write to the session
+in those 10 seconds, the expire will be extended by 10 seconds.
+
+Absolute expiry times are still not supported, but very easy to support, so will probably be done in the future.
+Feel free to submit a PR yourself!
+
 ## Custom backend
 
 Creating new backends is quite simple. All you need is to extend `starsessions.SessionBackend`
