@@ -33,6 +33,7 @@ class RedisBackend(SessionBackend):
                 redis_key_func
             ), "The redis_key_func needs to be a callable that takes a single string argument."
         self._redis_key_func = redis_key_func
+        self.expire = expire
 
     def get_redis_key(self, session_id: str) -> str:
         if self._redis_key_func:
