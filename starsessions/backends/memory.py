@@ -18,7 +18,10 @@ class InMemoryBackend(SessionBackend):
         return session_id
 
     async def remove(self, session_id: str) -> None:
-        del self.data[session_id]
+        try:
+            del self.data[session_id]
+        except KeyError:
+            pass
 
     async def exists(self, session_id: str) -> bool:
         return session_id in self.data
