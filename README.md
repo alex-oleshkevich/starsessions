@@ -200,3 +200,14 @@ handle.
 Some backends (like `RedisBackend`) optionally accept `serializer` argument that will be used to serialize and
 deserialize session data. By default, we provide (and use) `starsessions.JsonSerializer` but you can implement your own
 by extending `starsessions.Serializer` class.
+
+
+## Session termination
+
+The session cookie will be automatically removed if session has no data by the middleware.
+You can manually remove session data and clear underlying storage by calling `await request.session.delete()`
+
+## Regenerating session ID
+
+Sometimes you need a new session ID to avoid session fixation attacks (for example, after successful signs in).
+For that, use `request.session.regenerate_id()`.
