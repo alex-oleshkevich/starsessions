@@ -192,3 +192,18 @@ def test_session_cookie_domain() -> None:
     # check cookie max-age
     set_cookie = response.headers["set-cookie"]
     assert 'Domain=example.com' in set_cookie
+
+
+def test_middleware_has_to_clean_storage_after_removing_cookie() -> None:
+    backend = InMemoryBackend()
+    app = create_app()
+    app.add_middleware(SessionMiddleware, backend=backend, secret_key="example", autoload=True)
+    client = TestClient(app)
+
+    # set some session data
+    client.post("/update_session", json={"some": "data"})
+    assert len(backend.data)  # it now contains 1 session
+
+    # clear session data, the middleware has to free strorage space
+    client.post("/clear_session")
+    assert not len(backend.data)  # it now contains zero sessions

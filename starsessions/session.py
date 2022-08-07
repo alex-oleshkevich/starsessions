@@ -62,12 +62,10 @@ class Session:
 
     async def delete(self) -> None:
         if self.session_id:
-            self.data = {}
-            self._is_modified = True
+            self.clear()
             await self._backend.remove(self.session_id)
 
     async def flush(self) -> str:
-        self._is_modified = True
         await self.delete()
         return await self.regenerate_id()
 

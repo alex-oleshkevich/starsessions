@@ -52,7 +52,7 @@ class SessionMiddleware:
         async def send_wrapper(message: Message) -> None:
             if message["type"] == "http.response.start":
                 path = self.path or scope.get("root_path", "") or "/"
-                if scope["session"].is_modified:
+                if scope["session"].is_modified and not scope['session'].is_empty:
                     # We have session data to persist (data was changed, cleared, etc).
                     nonlocal session_id
                     session_id = await scope["session"].persist()
@@ -80,6 +80,7 @@ class SessionMiddleware:
                             self.security_flags,
                         )
                         headers.append("Set-Cookie", header_value)
+                        await self.backend.remove(scope['session'].session_id)
             await send(message)
 
         await self.app(scope, receive, send_wrapper)
