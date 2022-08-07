@@ -96,7 +96,7 @@ class Session:
 
     def clear(self) -> None:
         self._is_modified = True
-        self.data = {}
+        self.data.clear()
 
     def update(self, *args: typing.Any, **kwargs: typing.Any) -> None:
         self._is_modified = True
