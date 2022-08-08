@@ -35,7 +35,7 @@ jobs:
                     path: |
                         ~/.cache/pypoetry
                         ~/.cache/pip
-#                    key: ${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+                    key: reset
 
 
             -   name: Set up Python ${{ matrix.python-version }}
