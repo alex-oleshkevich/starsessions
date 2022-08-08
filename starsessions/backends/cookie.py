@@ -31,7 +31,7 @@ class CookieBackend(SessionBackend):
     async def write(self, data: typing.Dict[str, typing.Any], session_id: typing.Optional[str] = None) -> str:
         """The data is a session id in this backend."""
         encoded_data = b64encode(self._serializer.serialize(data).encode("utf-8"))
-        return self._signer.sign(encoded_data).decode("utf-8")  # type: ignore[no-any-return]
+        return self._signer.sign(encoded_data).decode("utf-8")
 
     async def remove(self, session_id: str) -> None:
         """Session data stored on client side - no way to remove it."""

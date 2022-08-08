@@ -28,7 +28,7 @@ class RedisBackend(SessionBackend):
         """
         assert url or connection, 'Either "url" or "connection" arguments must be provided.'
         self._serializer = serializer or JsonSerializer()
-        self._connection: aioredis.Redis = connection or aioredis.from_url(url)
+        self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
         if redis_key_func:
             assert callable(
                 redis_key_func

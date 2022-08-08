@@ -45,6 +45,8 @@ repos:
                 pass_filenames: false
                 additional_dependencies:
                     - pytest-asyncio
+                    - aioredis
+                    - itsdangerous
                 args: [ --config-file=pyproject.toml ]
 
     -   repo: https://github.com/myint/docformatter.git
