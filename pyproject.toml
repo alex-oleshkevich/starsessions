@@ -38,6 +38,7 @@ pytest-coverage = "^0.0"
 flake8 = "^5.0.4"
 mypy = "^0.971"
 aioredis = "^2.0.0"
+fastapi = "^0.79.0"
 
 [tool.poetry.extras]
 redis = ["aioredis"]

@@ -16,7 +16,8 @@ class RedisBackend(SessionBackend):
         redis_key_func: typing.Optional[typing.Callable[[str], str]] = None,
         expire: typing.Optional[int] = None,
     ) -> None:
-        """Initializes redis session backend.
+        """
+        Initializes redis session backend.
 
         Args:
             url (str, optional): Redis URL. Defaults to None.

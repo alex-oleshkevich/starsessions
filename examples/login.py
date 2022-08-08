@@ -1,5 +1,5 @@
-"""This examples demonstrates base usage of this library.
-A CookieBackend is used.
+"""
+This examples demonstrates base usage of this library. A CookieBackend is used.
 
 Required dependencies: python-multipart
 

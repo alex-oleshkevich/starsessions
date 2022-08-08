@@ -128,8 +128,11 @@ def test_secure_session_cookie() -> None:
 
 
 def test_session_cookie_subpath() -> None:
-    """Sub apps with own session should be separated from the main session by default.
-    Cookies for main app and sub apps are separated by path attribute."""
+    """
+    Sub apps with own session should be separated from the main session by default.
+
+    Cookies for main app and sub apps are separated by path attribute.
+    """
     app = create_app(secret_key="example", autoload=True)
     second_app = create_app(secret_key="example", autoload=True)
     app.mount("/second_app", second_app)
@@ -144,8 +147,11 @@ def test_session_cookie_subpath() -> None:
 
 
 def test_session_middleware_wants_secret_key() -> None:
-    """When no backend passed to SessionMiddleware then CookieBackend will be used by default.
-    This backend needs `secret_key` to sign cookie."""
+    """
+    When no backend passed to SessionMiddleware then CookieBackend will be used by default.
+
+    This backend needs `secret_key` to sign cookie.
+    """
     with pytest.raises(ImproperlyConfigured):
         create_app()
 
@@ -161,8 +167,11 @@ def test_session_middleware_with_custom_backend() -> None:
 
 
 def test_session_clears_on_browser_exit() -> None:
-    """When max-age is 0 then we set up a session-only cookie.
-    This cookie will expire immediately after closing browser."""
+    """
+    When max-age is 0 then we set up a session-only cookie.
+
+    This cookie will expire immediately after closing browser.
+    """
     client = TestClient(create_app(secret_key="example", autoload=True, max_age=0))
 
     response = client.get("/view_session")
@@ -181,8 +190,11 @@ def test_session_clears_on_browser_exit() -> None:
 
 
 def test_session_cookie_should_be_set_to_custom_path() -> None:
-    """We should be able to enable sessions for a specific paths only.
-    In this test case, session cookie should be bound to the /admin."""
+    """
+    We should be able to enable sessions for a specific paths only.
+
+    In this test case, session cookie should be bound to the /admin.
+    """
     client = TestClient(create_app(secret_key="example", autoload=True, path='/admin'))
 
     response = client.post("/update_session", json={"some": "data"})
@@ -194,8 +206,11 @@ def test_session_cookie_should_be_set_to_custom_path() -> None:
 
 
 def test_session_cookie_domain() -> None:
-    """We should be able to bind session cookie to a specific domain.
-    In this test case, session cookie should be bound to the example.com domain."""
+    """
+    We should be able to bind session cookie to a specific domain.
+
+    In this test case, session cookie should be bound to the example.com domain.
+    """
     client = TestClient(create_app(secret_key="example", autoload=True, domain='example.com'))
 
     response = client.post("/update_session", json={"some": "data"})

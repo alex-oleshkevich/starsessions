@@ -1,4 +1,5 @@
-"""This examples demonstrates redis backend usage.
+"""
+This examples demonstrates redis backend usage.
 
 You can change Redis connection by specifying REDIS_URL environment variable.
 
