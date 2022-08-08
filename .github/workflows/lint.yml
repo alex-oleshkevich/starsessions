@@ -15,7 +15,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                python-version: [ ' 3.7', '3.8', '3.9', '3.10', '3.11-dev' ]
+                python-version: [ ' 3.7', '3.8', '3.9', '3.10', '3.11.0b5' ]
         services:
             redis:
                 image: redis:6
@@ -35,7 +35,7 @@ jobs:
                     path: |
                         ~/.cache/pypoetry
                         ~/.cache/pip
-                    key: reset
+                    key: ${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
 
             -   name: Set up Python ${{ matrix.python-version }}
