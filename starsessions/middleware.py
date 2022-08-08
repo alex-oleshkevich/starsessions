@@ -3,7 +3,7 @@ from starlette.datastructures import MutableHeaders, Secret
 from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from . import CookieBackend, SessionBackend
+from .backends import CookieBackend, SessionBackend
 from .session import ImproperlyConfigured, Session
 
 
@@ -45,42 +45,52 @@ class SessionMiddleware:
         connection = HTTPConnection(scope)
         session_id = connection.cookies.get(self.session_cookie, None)
 
-        scope["session"] = Session(self.backend, session_id)
+        session = Session(self.backend, session_id)
+        scope["session"] = session
         if self.autoload:
-            await scope["session"].load()
+            await session.load()
 
         async def send_wrapper(message: Message) -> None:
-            if message["type"] == "http.response.start":
-                path = self.path or scope.get("root_path", "") or "/"
-                if scope["session"].is_modified and not scope['session'].is_empty:
-                    # We have session data to persist (data was changed, cleared, etc).
-                    nonlocal session_id
-                    session_id = await scope["session"].persist()
+            if message["type"] != "http.response.start":
+                return await send(message)
 
+            if not session.is_loaded:  # session was not accessed, do nothing
+                return await send(message)
+
+            nonlocal session_id
+            path = self.path or scope.get("root_path", "") or "/"
+
+            if session.is_empty:
+                # session data loaded but empty, no matter whether it was initially empty or cleared
+                # we have to remove the cookie and clear the storage
+                if not self.path or self.path and scope['path'].startswith(self.path):
                     headers = MutableHeaders(scope=message)
-                    header_parts = [
-                        f'{self.session_cookie}={session_id}',
-                        f'path={path}',
-                    ]
-                    if self.max_age:
-                        header_parts.append(f'Max-Age={self.max_age}')
-                    if self.domain:
-                        header_parts.append(f'Domain={self.domain}')
-
-                    header_parts.append(self.security_flags)
-                    header_value = '; '.join(header_parts)
+                    header_value = "{}={}; {}".format(
+                        self.session_cookie,
+                        f"null; path={path}; expires=Thu, 01 Jan 1970 00:00:00 GMT;",
+                        self.security_flags,
+                    )
                     headers.append("Set-Cookie", header_value)
-                elif scope["session"].is_loaded and scope["session"].is_empty:
-                    if not self.path or self.path and scope['path'].startswith(self.path):
-                        # no interactions to session were done
-                        headers = MutableHeaders(scope=message)
-                        header_value = "{}={}; {}".format(
-                            self.session_cookie,
-                            f"null; path={path}; expires=Thu, 01 Jan 1970 00:00:00 GMT;",
-                            self.security_flags,
-                        )
-                        headers.append("Set-Cookie", header_value)
-                        await self.backend.remove(scope['session'].session_id)
+                    await self.backend.remove(scope['session'].session_id)
+                return await send(message)
+
+            # persist session data
+            session_id = await session.persist()
+
+            headers = MutableHeaders(scope=message)
+            header_parts = [
+                f'{self.session_cookie}={session_id}',
+                f'path={path}',
+            ]
+            if self.max_age:
+                header_parts.append(f'Max-Age={self.max_age}')
+            if self.domain:
+                header_parts.append(f'Domain={self.domain}')
+
+            header_parts.append(self.security_flags)
+            header_value = '; '.join(header_parts)
+            headers.append("Set-Cookie", header_value)
+
             await send(message)
 
         await self.app(scope, receive, send_wrapper)
