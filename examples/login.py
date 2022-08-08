@@ -1,5 +1,5 @@
-"""This examples demonstrates base usage of this library.
-A CookieBackend is used.
+"""
+This examples demonstrates base usage of this library. A CookieBackend is used.
 
 Required dependencies: python-multipart
 
@@ -33,7 +33,7 @@ async def login(request: Request) -> Response:
     form_data = await request.form()
     username = form_data['username']
     request.session['username'] = username
-    request.session.regenerate_id()
+    request.session.regenerate_id()  # type: ignore[attr-defined]
     return RedirectResponse('/profile', 302)
 
 

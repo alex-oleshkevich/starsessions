@@ -16,7 +16,8 @@ class RedisBackend(SessionBackend):
         redis_key_func: typing.Optional[typing.Callable[[str], str]] = None,
         expire: typing.Optional[int] = None,
     ) -> None:
-        """Initializes redis session backend.
+        """
+        Initializes redis session backend.
 
         Args:
             url (str, optional): Redis URL. Defaults to None.
@@ -27,7 +28,7 @@ class RedisBackend(SessionBackend):
         """
         assert url or connection, 'Either "url" or "connection" arguments must be provided.'
         self._serializer = serializer or JsonSerializer()
-        self._connection: aioredis.Redis = connection or aioredis.from_url(url)
+        self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
         if redis_key_func:
             assert callable(
                 redis_key_func

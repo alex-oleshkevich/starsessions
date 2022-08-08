@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Python package
+name: Lint and test
 
 on:
     push:
@@ -15,7 +15,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                python-version: [ '3.6', ' 3.7', '3.8', '3.9', '3.10' ]
+                python-version: [ ' 3.7', '3.8', '3.9', '3.10' ]
         services:
             redis:
                 image: redis:6
@@ -35,7 +35,7 @@ jobs:
                     path: |
                         ~/.cache/pypoetry
                         ~/.cache/pip
-                    key: ${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+                    key: ${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
 
             -   name: Set up Python ${{ matrix.python-version }}

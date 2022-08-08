@@ -44,8 +44,11 @@ class Session:
         self._data = value
 
     async def load(self) -> None:
-        """Load data from the backend.
-        Subsequent calls do not take any effect."""
+        """
+        Load data from the backend.
+
+        Subsequent calls do not take any effect.
+        """
         if self.is_loaded:
             return
 

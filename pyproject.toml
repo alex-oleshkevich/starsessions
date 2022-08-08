@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "starsessions"
-version = "1.3.0"
+version = "1.4.0"
 description = "Pluggable session support for Starlette."
 authors = ["alex.oleshkevich <alex.oleshkevich@gmail.com>"]
 license = "MIT"
@@ -14,11 +14,11 @@ classifiers = [
     "Environment :: Web Environment",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.6",
     "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
 ]
@@ -32,12 +32,13 @@ aioredis = { version = "^2.0.0", optional = true }
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
 black = "^22.6.0"
-pytest-asyncio = "^0.15.0"
+pytest-asyncio = "^0.19.0"
 requests = "^2.25.1"
 pytest-coverage = "^0.0"
 flake8 = "^5.0.4"
 mypy = "^0.971"
 aioredis = "^2.0.0"
+fastapi = "^0.79.0"
 
 [tool.poetry.extras]
 redis = ["aioredis"]
@@ -77,7 +78,7 @@ exclude_lines = [
 [tool.mypy]
 disallow_untyped_defs = true
 ignore_missing_imports = true
-files = ["starsessions", "tests"]
+files = ["starsessions", "tests", "examples"]
 exclude = "/*venv/"
 pretty = true
 strict = true
