@@ -12,7 +12,9 @@ class SessionBackend(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write(self, data: typing.Dict, session_id: typing.Optional[str] = None) -> str:  # pragma: no cover
+    async def write(
+        self, data: typing.Dict[str, typing.Any], session_id: typing.Optional[str] = None
+    ) -> str:  # pragma: no cover
         """Write session data to the storage."""
         raise NotImplementedError()
 

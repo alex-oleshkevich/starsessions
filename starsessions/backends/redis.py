@@ -10,11 +10,11 @@ class RedisBackend(SessionBackend):
 
     def __init__(
         self,
-        url: str = None,
-        connection: aioredis.Redis = None,
-        serializer: Serializer = None,
-        redis_key_func: typing.Callable[[str], str] = None,
-        expire: int = None,
+        url: typing.Optional[str] = None,
+        connection: typing.Optional[aioredis.Redis] = None,
+        serializer: typing.Optional[Serializer] = None,
+        redis_key_func: typing.Optional[typing.Callable[[str], str]] = None,
+        expire: typing.Optional[int] = None,
     ) -> None:
         """Initializes redis session backend.
 
@@ -27,7 +27,7 @@ class RedisBackend(SessionBackend):
         """
         assert url or connection, 'Either "url" or "connection" arguments must be provided.'
         self._serializer = serializer or JsonSerializer()
-        self._connection = connection or aioredis.from_url(url)
+        self._connection: aioredis.Redis = connection or aioredis.from_url(url)
         if redis_key_func:
             assert callable(
                 redis_key_func
@@ -41,13 +41,13 @@ class RedisBackend(SessionBackend):
         else:
             return session_id
 
-    async def read(self, session_id: str) -> typing.Dict:
+    async def read(self, session_id: str) -> typing.Dict[str, typing.Any]:
         value = await self._connection.get(self.get_redis_key(session_id))
         if value is None:
             return {}
         return self._serializer.deserialize(value)
 
-    async def write(self, data: typing.Dict, session_id: typing.Optional[str] = None) -> str:
+    async def write(self, data: typing.Dict[str, typing.Any], session_id: typing.Optional[str] = None) -> str:
         session_id = session_id or await self.generate_id()
         session_id = session_id or await self.generate_id()
         await self._connection.set(
@@ -61,5 +61,5 @@ class RedisBackend(SessionBackend):
         await self._connection.delete(self.get_redis_key(session_id))
 
     async def exists(self, session_id: str) -> bool:
-        result = await self._connection.exists(self.get_redis_key(session_id))
+        result: int = await self._connection.exists(self.get_redis_key(session_id))
         return result > 0

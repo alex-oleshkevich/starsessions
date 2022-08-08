@@ -1,11 +1,12 @@
 import pytest
+import typing
 from unittest import mock
 
 from starsessions import InMemoryBackend, Session, SessionBackend, SessionNotLoaded
 
 
-@pytest.mark.asyncio
-async def test_session_load(in_memory: SessionBackend, session_payload: dict) -> None:
+@pytest.mark.asyncio  # type: ignore[misc]
+async def test_session_load(in_memory: SessionBackend, session_payload: typing.Dict[str, typing.Any]) -> None:
     await in_memory.write(session_payload, "session_id")
 
     session = Session(in_memory, "session_id")
@@ -13,14 +14,16 @@ async def test_session_load(in_memory: SessionBackend, session_payload: dict) ->
     assert session.items() == session_payload.items()
 
 
-@pytest.mark.asyncio
-async def test_session_load_with_new_session(in_memory: SessionBackend, session_payload: dict) -> None:
+@pytest.mark.asyncio  # type: ignore[misc]
+async def test_session_load_with_new_session(
+    in_memory: SessionBackend, session_payload: typing.Dict[str, typing.Any]
+) -> None:
     session = Session(in_memory)
     await session.load()
     assert len(session.keys()) == 0
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_session_subsequent_load(in_memory: SessionBackend) -> None:
     """It should return the cached data on any sequential call to load()."""
     await in_memory.write(dict(key="value"), "session_id")
@@ -38,7 +41,7 @@ async def test_session_subsequent_load(in_memory: SessionBackend) -> None:
     assert "key2" in session
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_session_persist(in_memory: InMemoryBackend) -> None:
     session = Session(in_memory, "session_id")
     await session.load()
@@ -51,7 +54,7 @@ async def test_session_persist(in_memory: InMemoryBackend) -> None:
     assert in_memory.data == {"session_id": {"key": "value"}}
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_session_persist_generates_id(in_memory: SessionBackend, in_memory_session: Session) -> None:
     async def _generate_id() -> str:
         return "new_session_id"
@@ -61,7 +64,7 @@ async def test_session_persist_generates_id(in_memory: SessionBackend, in_memory
         assert in_memory_session.session_id == "new_session_id"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_session_delete(in_memory: SessionBackend) -> None:
     await in_memory.write({}, "session_id")
 
@@ -83,7 +86,7 @@ async def test_session_delete(in_memory: SessionBackend) -> None:
     assert session.is_modified is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_session_flush(in_memory: SessionBackend) -> None:
     await in_memory.write({"key": "value"}, "session_id")
 
@@ -103,7 +106,7 @@ async def test_session_flush(in_memory: SessionBackend) -> None:
     assert session.is_empty is True
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_session_regenerate_id(in_memory: SessionBackend) -> None:
     session = Session(in_memory, "session_id")
     new_id = await session.regenerate_id()
