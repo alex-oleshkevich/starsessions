@@ -33,7 +33,7 @@ async def login(request: Request) -> Response:
     form_data = await request.form()
     username = form_data['username']
     request.session['username'] = username
-    request.session.regenerate_id()
+    request.session.regenerate_id()  # type: ignore[attr-defined]
     return RedirectResponse('/profile', 302)
 
 

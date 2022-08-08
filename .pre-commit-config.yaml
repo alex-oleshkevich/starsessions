@@ -47,6 +47,7 @@ repos:
                     - pytest-asyncio
                     - aioredis
                     - itsdangerous
+                    - fastapi
                 args: [ --config-file=pyproject.toml ]
 
     -   repo: https://github.com/myint/docformatter.git

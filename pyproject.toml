@@ -78,7 +78,7 @@ exclude_lines = [
 [tool.mypy]
 disallow_untyped_defs = true
 ignore_missing_imports = true
-files = ["starsessions", "tests"]
+files = ["starsessions", "tests", "examples"]
 exclude = "/*venv/"
 pretty = true
 strict = true
