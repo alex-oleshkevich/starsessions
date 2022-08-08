@@ -64,7 +64,6 @@ class SessionMiddleware:
                 # session data loaded but empty, no matter whether it was initially empty or cleared
                 # we have to remove the cookie and clear the storage
                 if not self.path or self.path and scope['path'].startswith(self.path):
-                    # no interactions to session were done
                     headers = MutableHeaders(scope=message)
                     header_value = "{}={}; {}".format(
                         self.session_cookie,
