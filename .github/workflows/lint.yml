@@ -55,7 +55,7 @@ jobs:
 
             -   name: Lint with mypy
                 run: |
-                    mypy --config-file pyproject.toml starsessions/
+                    mypy --config-file pyproject.toml starsessions/ tests
 
             -   name: Lint with black
                 run: |

@@ -16,10 +16,10 @@ class SessionMiddleware:
         same_site: str = "lax",
         https_only: bool = False,
         autoload: bool = False,
-        domain: str = None,
-        path: str = None,
-        secret_key: typing.Union[str, Secret] = None,
-        backend: SessionBackend = None,
+        domain: typing.Optional[str] = None,
+        path: typing.Optional[str] = None,
+        secret_key: typing.Optional[typing.Union[str, Secret]] = None,
+        backend: typing.Optional[SessionBackend] = None,
     ) -> None:
         self.app = app
         if backend is None:
@@ -52,10 +52,12 @@ class SessionMiddleware:
 
         async def send_wrapper(message: Message) -> None:
             if message["type"] != "http.response.start":
-                return await send(message)
+                await send(message)
+                return
 
             if not session.is_loaded:  # session was not accessed, do nothing
-                return await send(message)
+                await send(message)
+                return
 
             nonlocal session_id
             path = self.path or scope.get("root_path", "") or "/"
@@ -72,7 +74,8 @@ class SessionMiddleware:
                     )
                     headers.append("Set-Cookie", header_value)
                     await self.backend.remove(scope['session'].session_id)
-                return await send(message)
+                await send(message)
+                return
 
             # persist session data
             session_id = await session.persist()

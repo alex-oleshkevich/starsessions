@@ -14,13 +14,13 @@ class CookieBackend(SessionBackend):
         self,
         secret_key: typing.Union[str, Secret],
         max_age: int,
-        serializer: Serializer = None,
+        serializer: typing.Optional[Serializer] = None,
     ):
         self._signer = TimestampSigner(str(secret_key))
         self._max_age = max_age
         self._serializer = serializer or JsonSerializer()
 
-    async def read(self, session_id: str) -> typing.Dict:
+    async def read(self, session_id: str) -> typing.Dict[str, typing.Any]:
         """A session_id is a signed session value."""
         try:
             data = self._signer.unsign(session_id, max_age=self._max_age)
@@ -28,10 +28,10 @@ class CookieBackend(SessionBackend):
         except BadSignature:
             return {}
 
-    async def write(self, data: typing.Dict, session_id: typing.Optional[str] = None) -> str:
+    async def write(self, data: typing.Dict[str, typing.Any], session_id: typing.Optional[str] = None) -> str:
         """The data is a session id in this backend."""
         encoded_data = b64encode(self._serializer.serialize(data).encode("utf-8"))
-        return self._signer.sign(encoded_data).decode("utf-8")
+        return self._signer.sign(encoded_data).decode("utf-8")  # type: ignore[no-any-return]
 
     async def remove(self, session_id: str) -> None:
         """Session data stored on client side - no way to remove it."""

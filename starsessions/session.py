@@ -16,7 +16,7 @@ class ImproperlyConfigured(SessionError):
 
 
 class Session:
-    def __init__(self, backend: SessionBackend, session_id: str = None) -> None:
+    def __init__(self, backend: SessionBackend, session_id: typing.Optional[str] = None) -> None:
         self.session_id = session_id
         self._data: typing.Dict[str, typing.Any] = {}
         self._backend = backend
@@ -34,7 +34,7 @@ class Session:
         return self._is_modified
 
     @property
-    def data(self) -> typing.Dict:
+    def data(self) -> typing.Dict[str, typing.Any]:
         if not self.is_loaded:
             raise SessionNotLoaded("Session is not loaded.")
         return self._data

@@ -1,21 +1,24 @@
 import pytest
-from typing import Dict, Tuple
+import typing
 
 from starsessions import Session, SessionBackend
 from starsessions.backends.redis import RedisBackend
 
 
-@pytest.mark.asyncio
-async def test_redis_read_write(redis_session_payload: Tuple[SessionBackend, Dict[str, str]]) -> None:
+@pytest.mark.asyncio  # type: ignore[misc]
+async def test_redis_read_write(
+    redis_session_payload: typing.Tuple[SessionBackend, typing.Dict[str, typing.Any]]
+) -> None:
     redis, session_payload = redis_session_payload
     new_id = await redis.write(session_payload, "session_id")
     assert new_id == "session_id"
     assert await redis.read("session_id") == session_payload
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_redis_remove(
-    redis_session_payload: Tuple[SessionBackend, Dict[str, str]], session_payload: dict
+    redis_session_payload: typing.Tuple[SessionBackend, typing.Dict[str, typing.Any]],
+    session_payload: typing.Dict[str, typing.Any],
 ) -> None:
     redis, session_payload = redis_session_payload
     await redis.write(session_payload, "session_id")
@@ -23,9 +26,10 @@ async def test_redis_remove(
     assert await redis.exists("session_id") is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_redis_exists(
-    redis_session_payload: Tuple[SessionBackend, Dict[str, str]], session_payload: dict
+    redis_session_payload: typing.Tuple[SessionBackend, typing.Dict[str, str]],
+    session_payload: typing.Dict[str, typing.Any],
 ) -> None:
     redis, session_payload = redis_session_payload
     await redis.write(session_payload, "session_id")
@@ -33,15 +37,17 @@ async def test_redis_exists(
     assert await redis.exists("other id") is False
 
 
-@pytest.mark.asyncio
-async def test_redis_generate_id(redis_session_payload: Tuple[SessionBackend, Dict[str, str]]) -> None:
+@pytest.mark.asyncio  # type: ignore[misc]
+async def test_redis_generate_id(
+    redis_session_payload: typing.Tuple[SessionBackend, typing.Dict[str, typing.Any]]
+) -> None:
     redis, session_payload = redis_session_payload
     new_id = await redis.generate_id()
     assert isinstance(new_id, str)
 
 
-@pytest.mark.asyncio
-async def test_redis_empty_session(redis_session_payload: Tuple[SessionBackend, Dict[str, str]]) -> None:
+@pytest.mark.asyncio  # type: ignore[misc]
+async def test_redis_empty_session(redis_session_payload: typing.Tuple[SessionBackend, typing.Dict[str, str]]) -> None:
     redis, session_payload = redis_session_payload
     assert await redis.read("unknown_session_id") == {}
 
