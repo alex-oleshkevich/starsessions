@@ -4,28 +4,28 @@ import typing
 from starsessions import Session, SessionBackend
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio
 async def test_in_memory_read_write(in_memory: SessionBackend, session_payload: typing.Dict[str, typing.Any]) -> None:
     new_id = await in_memory.write(session_payload, "session_id")
     assert new_id == "session_id"
     assert await in_memory.read("session_id") == session_payload
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio
 async def test_in_memory_remove(in_memory: SessionBackend, session_payload: typing.Dict[str, typing.Any]) -> None:
     await in_memory.write(session_payload, "session_id")
     await in_memory.remove("session_id")
     assert await in_memory.exists("session_id") is False
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio
 async def test_in_memory_exists(in_memory: SessionBackend, session_payload: typing.Dict[str, typing.Any]) -> None:
     await in_memory.write(session_payload, "session_id")
     assert await in_memory.exists("session_id") is True
     assert await in_memory.exists("other id") is False
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio
 async def test_in_memory_generate_id(in_memory: SessionBackend) -> None:
     new_id = await in_memory.generate_id()
     assert isinstance(new_id, str)

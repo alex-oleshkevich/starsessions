@@ -43,6 +43,8 @@ repos:
             -   id: mypy
                 always_run: true
                 pass_filenames: false
+                additional_dependencies:
+                    - pytest-asyncio
                 args: [ --config-file=pyproject.toml ]
 
     -   repo: https://github.com/myint/docformatter.git
