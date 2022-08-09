@@ -4,7 +4,8 @@ from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .backends import CookieBackend, SessionBackend
-from .session import ImproperlyConfigured, Session
+from .exceptions import ImproperlyConfigured
+from .session import Session
 
 
 class SessionMiddleware:
