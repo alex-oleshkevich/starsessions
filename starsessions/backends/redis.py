@@ -2,6 +2,7 @@ import aioredis
 import typing
 
 from starsessions.backends.base import SessionBackend
+from starsessions.exceptions import ImproperlyConfigured
 from starsessions.serializers import JsonSerializer, Serializer
 
 
@@ -27,13 +28,16 @@ class RedisBackend(SessionBackend):
             expire (int, optional): Key expiry in seconds. Defaults to None.
         """
         if not (url or connection):
-            raise Exception("Either 'url' or 'connection' arguments must be provided.")
+            raise ImproperlyConfigured("Either 'url' or 'connection' arguments must be provided.")
 
         self._serializer = serializer or JsonSerializer()
         self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
+
         if redis_key_func:
             if not callable(redis_key_func):
-                raise Exception("The redis_key_func needs to be a callable that takes a single string argument.")
+                raise ImproperlyConfigured(
+                    "The redis_key_func needs to be a callable that takes a single string argument."
+                )
 
         self._redis_key_func = redis_key_func
         self.expire = expire
