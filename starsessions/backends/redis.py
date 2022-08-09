@@ -1,8 +1,8 @@
 import aioredis
 import typing
 
-from ..serializers import JsonSerializer, Serializer
-from .base import SessionBackend
+from starsessions.backends import JsonSerializer, Serializer
+from starsessions.backends.base import SessionBackend
 
 
 class RedisBackend(SessionBackend):
