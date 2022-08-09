@@ -67,5 +67,5 @@ def test_session_is_modified(redis_session: Session) -> None:
 
 
 def test_improperly_configured_redis_key() -> None:
-    with pytest.raises(AssertionError):
+    with pytest.raises(Exception):
         RedisBackend(redis_key_func="a_random_string")  # type: ignore[arg-type]
