@@ -26,13 +26,15 @@ class RedisBackend(SessionBackend):
             redis_key_func (typing.Callable[[str], str], optional): Customize redis key name. Defaults to None.
             expire (int, optional): Key expiry in seconds. Defaults to None.
         """
-        assert url or connection, 'Either "url" or "connection" arguments must be provided.'
+        if not (url or connection):
+            raise Exception("Either 'url' or 'connection' arguments must be provided.")
+
         self._serializer = serializer or JsonSerializer()
         self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
         if redis_key_func:
-            assert callable(
-                redis_key_func
-            ), "The redis_key_func needs to be a callable that takes a single string argument."
+            if not callable(redis_key_func):
+                raise Exception("The redis_key_func needs to be a callable that takes a single string argument.")
+
         self._redis_key_func = redis_key_func
         self.expire = expire
 
