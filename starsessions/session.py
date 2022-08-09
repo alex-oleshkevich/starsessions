@@ -1,18 +1,7 @@
 import typing
 
 from .backends.base import SessionBackend
-
-
-class SessionError(Exception):
-    """Base class for session exceptions."""
-
-
-class SessionNotLoaded(SessionError):
-    pass
-
-
-class ImproperlyConfigured(SessionError):
-    """Exception is raised when some settings are missing or misconfigured."""
+from .exceptions import SessionNotLoaded
 
 
 class Session:
