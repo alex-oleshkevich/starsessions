@@ -73,6 +73,9 @@ class SessionHandler:
         self.initially_empty = False
 
     async def load(self) -> None:
+        if self.is_loaded:  # don't refresh existing session, it may contain user data
+            return
+
         self.is_loaded = True
         data = {}
         if self.session_id:
