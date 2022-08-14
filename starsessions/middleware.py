@@ -1,10 +1,9 @@
 import typing
-from starlette.datastructures import MutableHeaders, Secret
+from starlette.datastructures import MutableHeaders
 from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from starsessions.backends import CookieBackend, SessionBackend
-from starsessions.exceptions import ImproperlyConfigured
+from starsessions.backends import SessionBackend
 from starsessions.serializers import JsonSerializer, Serializer
 from starsessions.session import Session, generate_id
 
@@ -13,6 +12,7 @@ class SessionMiddleware:
     def __init__(
         self,
         app: ASGIApp,
+        backend: SessionBackend,
         session_cookie: str = "session",
         max_age: int = 14 * 24 * 60 * 60,  # 14 days, in seconds
         same_site: str = "lax",
@@ -20,16 +20,9 @@ class SessionMiddleware:
         autoload: bool = False,
         domain: typing.Optional[str] = None,
         path: typing.Optional[str] = None,
-        secret_key: typing.Optional[typing.Union[str, Secret]] = None,
-        backend: typing.Optional[SessionBackend] = None,
         serializer: typing.Optional[Serializer] = None,
     ) -> None:
         self.app = app
-        if backend is None:
-            if secret_key is None:
-                raise ImproperlyConfigured("CookieBackend requires secret_key argument.")
-            backend = CookieBackend(secret_key, max_age)
-
         self.backend = backend
         self.serializer = serializer or JsonSerializer()
         self.session_cookie = session_cookie
