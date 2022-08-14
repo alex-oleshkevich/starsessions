@@ -1,46 +1,34 @@
 import pytest
-import typing
 
-from starsessions import Session, SessionBackend
+from starsessions.backends.base import SessionBackend
 from starsessions.backends.redis import RedisBackend
+from starsessions.session import Session
 
 
 @pytest.mark.asyncio
-async def test_redis_read_write(
-    redis_session_payload: typing.Tuple[SessionBackend, typing.Dict[str, typing.Any]]
-) -> None:
-    redis, session_payload = redis_session_payload
-    new_id = await redis.write("session_id", session_payload)
+async def test_redis_read_write(redis_backend: SessionBackend) -> None:
+    new_id = await redis_backend.write("session_id", b'data')
     assert new_id == "session_id"
-    assert await redis.read("session_id") == session_payload
+    assert await redis_backend.read("session_id") == b'data'
 
 
 @pytest.mark.asyncio
-async def test_redis_remove(
-    redis_session_payload: typing.Tuple[SessionBackend, typing.Dict[str, typing.Any]],
-    session_payload: typing.Dict[str, typing.Any],
-) -> None:
-    redis, session_payload = redis_session_payload
-    await redis.write("session_id", session_payload)
-    await redis.remove("session_id")
-    assert await redis.exists("session_id") is False
+async def test_redis_remove(redis_backend: SessionBackend) -> None:
+    await redis_backend.write("session_id", b'data')
+    await redis_backend.remove("session_id")
+    assert await redis_backend.exists("session_id") is False
 
 
 @pytest.mark.asyncio
-async def test_redis_exists(
-    redis_session_payload: typing.Tuple[SessionBackend, typing.Dict[str, str]],
-    session_payload: typing.Dict[str, typing.Any],
-) -> None:
-    redis, session_payload = redis_session_payload
-    await redis.write("session_id", session_payload)
-    assert await redis.exists("session_id") is True
-    assert await redis.exists("other id") is False
+async def test_redis_exists(redis_backend: SessionBackend) -> None:
+    await redis_backend.write("session_id", b'data')
+    assert await redis_backend.exists("session_id") is True
+    assert await redis_backend.exists("other id") is False
 
 
 @pytest.mark.asyncio
-async def test_redis_empty_session(redis_session_payload: typing.Tuple[SessionBackend, typing.Dict[str, str]]) -> None:
-    redis, session_payload = redis_session_payload
-    assert await redis.read("unknown_session_id") == {}
+async def test_redis_empty_session(redis_backend: SessionBackend) -> None:
+    assert await redis_backend.read("unknown_session_id") == b''
 
 
 def test_session_is_empty(redis_session: Session) -> None:

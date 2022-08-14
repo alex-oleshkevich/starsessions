@@ -1,18 +1,21 @@
 import abc
-import typing
 
 
 class SessionBackend(abc.ABC):  # pragma: no cover
     """Base class for session backends."""
 
     @abc.abstractmethod
-    async def read(self, session_id: str) -> typing.Dict[str, typing.Any]:
+    async def read(self, session_id: str) -> bytes:
         """Read session data from the storage."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write(self, session_id: str, data: typing.Dict[str, typing.Any]) -> str:
-        """Write session data to the storage."""
+    async def write(self, session_id: str, data: bytes) -> str:
+        """
+        Write session data to the storage.
+
+        Must return session ID. Either new or from arguments..
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
