@@ -1,4 +1,3 @@
-import pytest
 import re
 import typing
 from starlette.applications import Starlette
@@ -8,7 +7,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.testclient import TestClient
 
-from starsessions import ImproperlyConfigured, InMemoryBackend, SessionMiddleware
+from starsessions import CookieBackend, InMemoryBackend, SessionBackend, SessionMiddleware
 
 
 def view_session(request: Request) -> JSONResponse:
@@ -39,10 +38,10 @@ def create_app(**middleware_kwargs: typing.Any) -> Starlette:
     )
 
 
-def test_session_middleware() -> None:
+def test_session_middleware(cookie: SessionBackend) -> None:
     """Verify common use cases: read session, modify session, and clear session."""
     client = TestClient(
-        create_app(secret_key="example", autoload=True),
+        create_app(backend=cookie, autoload=True),
     )
     response = client.get("/view_session")
     assert response.json() == {"session": {}}
@@ -66,17 +65,17 @@ def test_session_middleware() -> None:
     assert response.json() == {"session": {}}
 
 
-def test_storage_has_no_data_for_session_id() -> None:
+def test_storage_has_no_data_for_session_id(cookie: SessionBackend) -> None:
     """Test a case when session ID is set but storage has no value for it."""
     headers = {"cookie": "session=someid"}
-    client = TestClient(create_app(secret_key="example", autoload=True))
+    client = TestClient(create_app(backend=cookie, autoload=True))
     response = client.get("/view_session", headers=headers)
     assert response.json() == {"session": {}}
 
 
-def test_cookie_should_expire_when_max_age_is_in_past() -> None:
+def test_cookie_should_expire_when_max_age_is_in_past(cookie: SessionBackend) -> None:
     """Session cookie must be removed if current time is greater than session's max age."""
-    client = TestClient(create_app(secret_key="example", max_age=-1, autoload=True))
+    client = TestClient(create_app(backend=CookieBackend(secret_key='key', max_age=-1), max_age=-1, autoload=True))
 
     response = client.post("/update_session", json={"some": "data"})
     assert response.json() == {"session": {"some": "data"}}
@@ -91,14 +90,14 @@ def test_cookie_should_expire_when_max_age_is_in_past() -> None:
     assert response.json() == {"session": {}}
 
 
-def test_secure_session_cookie() -> None:
+def test_secure_session_cookie(cookie: SessionBackend) -> None:
     """Test that insecure clients (non-TLS) cannot access cookie when https_only=True."""
     secure_client = TestClient(
-        create_app(secret_key="example", https_only=True, autoload=True),
+        create_app(backend=cookie, https_only=True, autoload=True),
         base_url="https://testserver",
     )
     unsecure_client = TestClient(
-        create_app(secret_key="example", https_only=True, autoload=True),
+        create_app(backend=cookie, https_only=True, autoload=True),
         base_url="http://testserver",
     )
 
@@ -127,33 +126,23 @@ def test_secure_session_cookie() -> None:
     assert response.json() == {"session": {}}
 
 
-def test_session_cookie_subpath() -> None:
+def test_session_cookie_subpath(cookie: SessionBackend) -> None:
     """
     Sub apps with own session should be separated from the main session by default.
 
     Cookies for main app and sub apps are separated by path attribute.
     """
-    app = create_app(secret_key="example", autoload=True)
-    second_app = create_app(secret_key="example", autoload=True)
+    app = create_app(backend=cookie, autoload=True)
+    second_app = create_app(backend=cookie, autoload=True)
     app.mount("/second_app", second_app)
 
     client = TestClient(app, base_url="http://testserver/second_app")
     response = client.post("second_app/update_session", json={"some": "data"})
-    cookie = response.headers["set-cookie"]
-    match = re.search(r"; path=(\S+);", cookie)
+    set_cookie = response.headers["set-cookie"]
+    match = re.search(r"; path=(\S+);", set_cookie)
     assert match
     cookie_path = match.groups()[0]
     assert cookie_path == "/second_app"
-
-
-def test_session_middleware_wants_secret_key() -> None:
-    """
-    When no backend passed to SessionMiddleware then CookieBackend will be used by default.
-
-    This backend needs `secret_key` to sign cookie.
-    """
-    with pytest.raises(ImproperlyConfigured):
-        create_app()
 
 
 def test_session_middleware_with_custom_backend() -> None:
@@ -166,13 +155,13 @@ def test_session_middleware_with_custom_backend() -> None:
     assert backend.data == {'someid': b'{"some": "data"}'}, 'Session backend was not updated.'
 
 
-def test_session_clears_on_browser_exit() -> None:
+def test_session_clears_on_browser_exit(cookie: SessionBackend) -> None:
     """
     When max-age is 0 then we set up a session-only cookie.
 
     This cookie will expire immediately after closing browser.
     """
-    client = TestClient(create_app(secret_key="example", autoload=True, max_age=0))
+    client = TestClient(create_app(backend=cookie, autoload=True, max_age=0))
 
     response = client.get("/view_session")
     assert response.json() == {"session": {}}
@@ -189,13 +178,13 @@ def test_session_clears_on_browser_exit() -> None:
     assert response.json() == {"session": {}}
 
 
-def test_session_cookie_should_be_set_to_custom_path() -> None:
+def test_session_cookie_should_be_set_to_custom_path(cookie: SessionBackend) -> None:
     """
     We should be able to enable sessions for a specific paths only.
 
     In this test case, session cookie should be bound to the /admin.
     """
-    client = TestClient(create_app(secret_key="example", autoload=True, path='/admin'))
+    client = TestClient(create_app(backend=cookie, autoload=True, path='/admin'))
 
     response = client.post("/update_session", json={"some": "data"})
     assert response.json() == {"session": {"some": "data"}}
@@ -205,13 +194,13 @@ def test_session_cookie_should_be_set_to_custom_path() -> None:
     assert 'path=/admin' in set_cookie
 
 
-def test_session_cookie_domain() -> None:
+def test_session_cookie_domain(cookie: SessionBackend) -> None:
     """
     We should be able to bind session cookie to a specific domain.
 
     In this test case, session cookie should be bound to the example.com domain.
     """
-    client = TestClient(create_app(secret_key="example", autoload=True, domain='example.com'))
+    client = TestClient(create_app(backend=cookie, autoload=True, domain='example.com'))
 
     response = client.post("/update_session", json={"some": "data"})
     assert response.json() == {"session": {"some": "data"}}
@@ -224,7 +213,7 @@ def test_session_cookie_domain() -> None:
 def test_middleware_has_to_clean_storage_after_removing_cookie() -> None:
     """When SessionMiddleware removes cookie it also has to clean the storage."""
     backend = InMemoryBackend()
-    client = TestClient(create_app(backend=backend, secret_key="example", autoload=True))
+    client = TestClient(create_app(backend=backend, autoload=True))
 
     # set some session data
     client.post("/update_session", json={"some": "data"})
