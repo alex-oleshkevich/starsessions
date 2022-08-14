@@ -33,11 +33,8 @@ class RedisBackend(SessionBackend):
         self._serializer = serializer or JsonSerializer()
         self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
 
-        if redis_key_func:
-            if not callable(redis_key_func):
-                raise ImproperlyConfigured(
-                    "The redis_key_func needs to be a callable that takes a single string argument."
-                )
+        if redis_key_func and not callable(redis_key_func):
+            raise ImproperlyConfigured("The redis_key_func needs to be a callable that takes a single string argument.")
 
         self._redis_key_func = redis_key_func
         self.expire = expire
@@ -54,9 +51,7 @@ class RedisBackend(SessionBackend):
             return {}
         return self._serializer.deserialize(value)
 
-    async def write(self, data: typing.Dict[str, typing.Any], session_id: typing.Optional[str] = None) -> str:
-        session_id = session_id or await self.generate_id()
-        session_id = session_id or await self.generate_id()
+    async def write(self, session_id: str, data: typing.Dict[str, typing.Any]) -> str:
         await self._connection.set(
             self.get_redis_key(session_id),
             self._serializer.serialize(data),

@@ -2,12 +2,14 @@ import pytest
 import typing
 from unittest import mock
 
-from starsessions import InMemoryBackend, Session, SessionBackend, SessionNotLoaded
+from starsessions import Session, session
+from starsessions.backends import InMemoryBackend, SessionBackend
+from starsessions.exceptions import SessionNotLoaded
 
 
 @pytest.mark.asyncio
 async def test_session_load(in_memory: SessionBackend, session_payload: typing.Dict[str, typing.Any]) -> None:
-    await in_memory.write(session_payload, "session_id")
+    await in_memory.write("session_id", session_payload)
 
     session = Session(in_memory, "session_id")
     await session.load()
@@ -26,7 +28,7 @@ async def test_session_load_with_new_session(
 @pytest.mark.asyncio
 async def test_session_subsequent_load(in_memory: SessionBackend) -> None:
     """It should return the cached data on any sequential call to load()."""
-    await in_memory.write(dict(key="value"), "session_id")
+    await in_memory.write("session_id", dict(key="value"))
 
     session = Session(in_memory, "session_id")
     await session.load()
@@ -56,17 +58,17 @@ async def test_session_persist(in_memory: InMemoryBackend) -> None:
 
 @pytest.mark.asyncio
 async def test_session_persist_generates_id(in_memory: SessionBackend, in_memory_session: Session) -> None:
-    async def _generate_id() -> str:
+    def _generate_id() -> str:
         return "new_session_id"
 
-    with mock.patch.object(in_memory, 'generate_id', _generate_id):
+    with mock.patch.object(session, 'generate_id', _generate_id):
         await in_memory_session.persist()
         assert in_memory_session.session_id == "new_session_id"
 
 
 @pytest.mark.asyncio
 async def test_session_delete(in_memory: SessionBackend) -> None:
-    await in_memory.write({}, "session_id")
+    await in_memory.write("session_id", {})
 
     session = Session(in_memory, "session_id")
     await session.load()
@@ -88,7 +90,7 @@ async def test_session_delete(in_memory: SessionBackend) -> None:
 
 @pytest.mark.asyncio
 async def test_session_flush(in_memory: SessionBackend) -> None:
-    await in_memory.write({"key": "value"}, "session_id")
+    await in_memory.write("session_id", {"key": "value"})
 
     session = Session(in_memory, "session_id")
     await session.load()

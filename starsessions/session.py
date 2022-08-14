@@ -1,7 +1,13 @@
+import secrets
 import typing
 
 from .backends.base import SessionBackend
 from .exceptions import SessionNotLoaded
+
+
+def generate_id() -> str:
+    """Generate a new, cryptographically strong session ID."""
+    return secrets.token_hex(128)
 
 
 class Session:
@@ -49,7 +55,8 @@ class Session:
         self.is_loaded = True
 
     async def persist(self) -> str:
-        self.session_id = await self._backend.write(self.data, self.session_id)
+        session_id = self.session_id or generate_id()
+        self.session_id = await self._backend.write(session_id, self.data)
         return self.session_id
 
     async def delete(self) -> None:
@@ -62,7 +69,7 @@ class Session:
         return await self.regenerate_id()
 
     async def regenerate_id(self) -> str:
-        self.session_id = await self._backend.generate_id()
+        self.session_id = generate_id()
         self._is_modified = True
         return self.session_id
 

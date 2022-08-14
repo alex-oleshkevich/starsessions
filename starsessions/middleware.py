@@ -44,7 +44,7 @@ class SessionMiddleware:
             return
 
         connection = HTTPConnection(scope)
-        session_id = connection.cookies.get(self.session_cookie, None)
+        session_id = connection.cookies.get(self.session_cookie)
 
         session = Session(self.backend, session_id)
         scope["session"] = session
