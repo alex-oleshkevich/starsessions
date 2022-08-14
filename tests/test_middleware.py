@@ -163,7 +163,7 @@ def test_session_middleware_with_custom_backend() -> None:
     client = TestClient(create_app(backend=backend, autoload=True))
     response = client.post("/update_session", json={'some': 'data'}, headers={"cookie": "session=someid"})
     assert response.json() == {"session": {'some': 'data'}}
-    assert backend.data == {'someid': {'some': 'data'}}, 'Session backend was not updated.'
+    assert backend.data == {'someid': b'{"some": "data"}'}, 'Session backend was not updated.'
 
 
 def test_session_clears_on_browser_exit() -> None:

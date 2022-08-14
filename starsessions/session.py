@@ -50,14 +50,10 @@ class Session:
         if not self.session_id:
             self.data = {}
         else:
-            self.data = await self._backend.read(self.session_id)
+            serializer = getattr(self._backend, 'serializer')
+            self.data = serializer.deserialize(await self._backend.read(self.session_id))
 
         self.is_loaded = True
-
-    async def persist(self) -> str:
-        session_id = self.session_id or generate_id()
-        self.session_id = await self._backend.write(session_id, self.data)
-        return self.session_id
 
     async def delete(self) -> None:
         if self.session_id:

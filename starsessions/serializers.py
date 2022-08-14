@@ -5,11 +5,11 @@ import typing
 
 class Serializer(abc.ABC):  # pragma: no cover
     @abc.abstractmethod
-    def serialize(self, data: typing.Any) -> str:
+    def serialize(self, data: typing.Any) -> bytes:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def deserialize(self, data: str) -> typing.Dict[str, typing.Any]:
+    def deserialize(self, data: bytes) -> typing.Dict[str, typing.Any]:
         raise NotImplementedError()
 
 
@@ -22,8 +22,10 @@ class JsonSerializer(Serializer):
         self._json_encoder = json_encoder
         self._json_decoder = json_decoder
 
-    def serialize(self, data: typing.Any) -> str:
-        return json.dumps(data, cls=self._json_encoder)
+    def serialize(self, data: typing.Any) -> bytes:
+        return json.dumps(data, cls=self._json_encoder).encode('utf-8')
 
-    def deserialize(self, data: str) -> typing.Dict[str, typing.Any]:
+    def deserialize(self, data: bytes) -> typing.Dict[str, typing.Any]:
+        if not data:
+            return {}
         return json.loads(data, cls=self._json_decoder)  # type: ignore[no-any-return]

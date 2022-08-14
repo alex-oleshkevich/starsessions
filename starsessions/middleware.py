@@ -3,9 +3,10 @@ from starlette.datastructures import MutableHeaders, Secret
 from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from .backends import CookieBackend, SessionBackend
-from .exceptions import ImproperlyConfigured
-from .session import Session
+from starsessions.backends import CookieBackend, SessionBackend
+from starsessions.exceptions import ImproperlyConfigured
+from starsessions.serializers import JsonSerializer, Serializer
+from starsessions.session import Session, generate_id
 
 
 class SessionMiddleware:
@@ -21,6 +22,7 @@ class SessionMiddleware:
         path: typing.Optional[str] = None,
         secret_key: typing.Optional[typing.Union[str, Secret]] = None,
         backend: typing.Optional[SessionBackend] = None,
+        serializer: typing.Optional[Serializer] = None,
     ) -> None:
         self.app = app
         if backend is None:
@@ -29,6 +31,7 @@ class SessionMiddleware:
             backend = CookieBackend(secret_key, max_age)
 
         self.backend = backend
+        self.serializer = serializer or JsonSerializer()
         self.session_cookie = session_cookie
         self.max_age = max_age
         self.autoload = autoload
@@ -37,6 +40,9 @@ class SessionMiddleware:
         self.security_flags = "httponly; samesite=" + same_site
         if https_only:  # Secure flag can be used with HTTPS only
             self.security_flags += "; secure"
+
+        # maintain backward compatibility while #27 is not implemented
+        setattr(self.backend, 'serializer', self.serializer)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] not in ("http", "websocket"):  # pragma: no cover
@@ -79,7 +85,8 @@ class SessionMiddleware:
                 return
 
             # persist session data
-            session_id = await session.persist()
+            session_id = session_id or generate_id()
+            session_id = await self.backend.write(session_id, self.serializer.serialize(session.data))
 
             headers = MutableHeaders(scope=message)
             header_parts = [

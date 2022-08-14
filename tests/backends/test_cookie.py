@@ -1,13 +1,12 @@
 import pytest
-import typing
 
 from starsessions import SessionBackend
 
 
 @pytest.mark.asyncio
-async def test_cookie_read_write(cookie: SessionBackend, session_payload: typing.Dict[str, typing.Any]) -> None:
-    new_id = await cookie.write("session_id", session_payload)
-    assert await cookie.read(new_id) == session_payload
+async def test_cookie_read_write(cookie: SessionBackend) -> None:
+    new_id = await cookie.write("session_id", b'some data')
+    assert await cookie.read(new_id) == b'some data'
 
 
 @pytest.mark.asyncio

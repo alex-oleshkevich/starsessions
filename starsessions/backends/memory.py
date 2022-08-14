@@ -7,12 +7,12 @@ class InMemoryBackend(SessionBackend):
     """Stores session data in a dictionary."""
 
     def __init__(self) -> None:
-        self.data: typing.Dict[str, typing.Any] = {}
+        self.data: typing.Dict[str, bytes] = {}
 
-    async def read(self, session_id: str) -> typing.Dict[str, typing.Any]:
-        return self.data.get(session_id, {}).copy()  # type: ignore[no-any-return]
+    async def read(self, session_id: str) -> bytes:
+        return self.data.get(session_id, b'')
 
-    async def write(self, session_id: str, data: typing.Dict[str, typing.Any]) -> str:
+    async def write(self, session_id: str, data: bytes) -> str:
         self.data[session_id] = data
         return session_id
 

@@ -1,19 +1,18 @@
 import pytest
 import typing
-from unittest import mock
 
-from starsessions import Session, session
-from starsessions.backends import InMemoryBackend, SessionBackend
+from starsessions import Session
+from starsessions.backends import SessionBackend
 from starsessions.exceptions import SessionNotLoaded
 
 
 @pytest.mark.asyncio
-async def test_session_load(in_memory: SessionBackend, session_payload: typing.Dict[str, typing.Any]) -> None:
-    await in_memory.write("session_id", session_payload)
+async def test_session_load(in_memory: SessionBackend) -> None:
+    await in_memory.write("session_id", b'{"key": "value"}')
 
     session = Session(in_memory, "session_id")
     await session.load()
-    assert session.items() == session_payload.items()
+    assert session['key'] == 'value'
 
 
 @pytest.mark.asyncio
@@ -28,7 +27,7 @@ async def test_session_load_with_new_session(
 @pytest.mark.asyncio
 async def test_session_subsequent_load(in_memory: SessionBackend) -> None:
     """It should return the cached data on any sequential call to load()."""
-    await in_memory.write("session_id", dict(key="value"))
+    await in_memory.write("session_id", b'{"key": "value"}')
 
     session = Session(in_memory, "session_id")
     await session.load()
@@ -44,31 +43,8 @@ async def test_session_subsequent_load(in_memory: SessionBackend) -> None:
 
 
 @pytest.mark.asyncio
-async def test_session_persist(in_memory: InMemoryBackend) -> None:
-    session = Session(in_memory, "session_id")
-    await session.load()
-    session["key"] = "value"
-    new_id = await session.persist()
-
-    # session ID should no change when was passed via arguments
-    assert new_id == "session_id"
-
-    assert in_memory.data == {"session_id": {"key": "value"}}
-
-
-@pytest.mark.asyncio
-async def test_session_persist_generates_id(in_memory: SessionBackend, in_memory_session: Session) -> None:
-    def _generate_id() -> str:
-        return "new_session_id"
-
-    with mock.patch.object(session, 'generate_id', _generate_id):
-        await in_memory_session.persist()
-        assert in_memory_session.session_id == "new_session_id"
-
-
-@pytest.mark.asyncio
 async def test_session_delete(in_memory: SessionBackend) -> None:
-    await in_memory.write("session_id", {})
+    await in_memory.write("session_id", b'')
 
     session = Session(in_memory, "session_id")
     await session.load()
@@ -86,35 +62,6 @@ async def test_session_delete(in_memory: SessionBackend) -> None:
 
     assert session.is_empty is True
     assert session.is_modified is False
-
-
-@pytest.mark.asyncio
-async def test_session_flush(in_memory: SessionBackend) -> None:
-    await in_memory.write("session_id", {"key": "value"})
-
-    session = Session(in_memory, "session_id")
-    await session.load()
-    new_id = await session.flush()
-    assert new_id == session.session_id
-    assert new_id != "session_id"
-    assert session.is_modified is True
-    assert session.is_empty is True
-
-    # it shouldn't fail on non-persisted session
-    session = Session(in_memory)
-    await session.load()
-    await session.flush()
-    assert session.is_modified is True
-    assert session.is_empty is True
-
-
-@pytest.mark.asyncio
-async def test_session_regenerate_id(in_memory: SessionBackend) -> None:
-    session = Session(in_memory, "session_id")
-    new_id = await session.regenerate_id()
-    assert session.session_id == new_id
-    assert session.session_id != "session_id"
-    assert session.is_modified is True
 
 
 def test_session_keys(in_memory_session: Session) -> None:
