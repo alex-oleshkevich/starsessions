@@ -36,6 +36,8 @@ async def test_loads_for_string_paths(backend: SessionBackend) -> None:
     assert client.get('/', cookies={'session': 'session_id'}).json() == {}
     assert client.get('/app', cookies={'session': 'session_id'}).json() == {'key': 'value'}
     assert client.get('/admin', cookies={'session': 'session_id'}).json() == {'key': 'value'}
+    assert client.get('/app/1/users', cookies={'session': 'session_id'}).json() == {'key': 'value'}
+    assert client.get('/admin/settings', cookies={'session': 'session_id'}).json() == {'key': 'value'}
 
 
 @pytest.mark.asyncio
@@ -53,5 +55,7 @@ async def test_loads_for_regex_paths(backend: SessionBackend) -> None:
     app = SessionMiddleware(SessionAutoloadMiddleware(app, paths=[rx_admin, rx_app]), backend=backend)
     client = TestClient(app)
     assert client.get('/', cookies={'session': 'session_id'}).json() == {}
-    assert client.get('/application', cookies={'session': 'session_id'}).json() == {'key': 'value'}
-    assert client.get('/administrator', cookies={'session': 'session_id'}).json() == {'key': 'value'}
+    assert client.get('/app', cookies={'session': 'session_id'}).json() == {'key': 'value'}
+    assert client.get('/admin', cookies={'session': 'session_id'}).json() == {'key': 'value'}
+    assert client.get('/app/1/users', cookies={'session': 'session_id'}).json() == {'key': 'value'}
+    assert client.get('/admin/settings', cookies={'session': 'session_id'}).json() == {'key': 'value'}
