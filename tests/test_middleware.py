@@ -1,43 +1,11 @@
 import pytest
-import typing
-from starlette.applications import Starlette
-from starlette.middleware import Middleware
-from starlette.requests import HTTPConnection, Request
+from starlette.requests import HTTPConnection
 from starlette.responses import JSONResponse, Response
-from starlette.routing import Route
 from starlette.testclient import TestClient
 from starlette.types import Receive, Scope, Send
 
 from starsessions import SessionBackend, SessionMiddleware
 from starsessions.session import load_session
-
-
-def view_session(request: Request) -> JSONResponse:
-    return JSONResponse({"session": request.session})
-
-
-async def update_session(request: Request) -> JSONResponse:
-    data = await request.json()
-    request.session.update(data)
-    return JSONResponse({"session": request.session})
-
-
-async def clear_session(request: Request) -> JSONResponse:
-    request.session.clear()
-    return JSONResponse({"session": request.session})
-
-
-def create_app(**middleware_kwargs: typing.Any) -> Starlette:
-    return Starlette(
-        routes=[
-            Route("/view_session", view_session),
-            Route("/update_session", update_session, methods=["POST"]),
-            Route("/clear_session", clear_session, methods=["POST"]),
-        ],
-        middleware=[
-            Middleware(SessionMiddleware, **middleware_kwargs),
-        ],
-    )
 
 
 def test_loads_empty_session(backend: SessionBackend) -> None:
@@ -280,18 +248,3 @@ def test_session_only_cookies(backend: SessionBackend) -> None:
     client = TestClient(app)
     response = client.get('/')
     assert 'max-age' not in response.headers['set-cookie'].lower()
-
-
-@pytest.mark.asyncio
-async def test_session_autoload(backend: SessionBackend) -> None:
-    await backend.write('session_id', b'{"key": "value"}')
-
-    async def app(scope: Scope, receive: Receive, send: Send) -> None:
-        connection = HTTPConnection(scope, receive)
-
-        response = JSONResponse(connection.session)
-        await response(scope, receive, send)
-
-    app = SessionMiddleware(app, backend=backend, autoload=True)
-    client = TestClient(app)
-    assert client.get('/', cookies={'session': 'session_id'}).json() == {'key': 'value'}

@@ -1,3 +1,4 @@
+import re
 import typing
 from starlette.datastructures import MutableHeaders
 from starlette.requests import HTTPConnection
@@ -5,7 +6,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from starsessions.backends import SessionBackend
 from starsessions.serializers import JsonSerializer, Serializer
-from starsessions.session import SessionHandler
+from starsessions.session import SessionHandler, load_session
 
 
 class SessionMiddleware:
@@ -17,7 +18,6 @@ class SessionMiddleware:
         max_age: int = 14 * 24 * 60 * 60,  # 14 days, in seconds
         same_site: str = "lax",
         https_only: bool = False,
-        autoload: bool = False,
         domain: typing.Optional[str] = None,
         path: typing.Optional[str] = None,
         serializer: typing.Optional[Serializer] = None,
@@ -27,7 +27,6 @@ class SessionMiddleware:
         self.serializer = serializer or JsonSerializer()
         self.session_cookie = session_cookie
         self.max_age = max_age
-        self.autoload = autoload
         self.domain = domain
         self.path = path
         self.security_flags = "httponly; samesite=" + same_site
@@ -45,9 +44,6 @@ class SessionMiddleware:
 
         scope["session"] = {}
         scope["session_handler"] = handler
-
-        if self.autoload:
-            await handler.load()
 
         async def send_wrapper(message: Message) -> None:
             if message["type"] != "http.response.start":
@@ -102,3 +98,33 @@ class SessionMiddleware:
             await send(message)
 
         await self.app(scope, receive, send_wrapper)
+
+
+class SessionAutoloadMiddleware:
+    def __init__(
+        self,
+        app: ASGIApp,
+        paths: typing.Optional[typing.List[typing.Union[str, typing.Pattern[str]]]] = None,
+    ) -> None:
+        self.app = app
+        self.paths = paths or []
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] not in ("http", "websocket"):  # pragma: no cover
+            await self.app(scope, receive, send)
+            return
+
+        connection = HTTPConnection(scope, receive)
+        if self.should_autoload(connection):
+            await load_session(connection)
+
+        await self.app(scope, receive, send)
+
+    def should_autoload(self, connection: HTTPConnection) -> bool:
+        if not self.paths:
+            return True
+
+        for path in self.paths:
+            if re.match(path, connection.url.path):
+                return True
+        return False

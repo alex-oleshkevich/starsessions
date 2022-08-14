@@ -1,7 +1,13 @@
-## Pluggable session support for Starlette and FastAPI frameworks
+## Starsessions
 
-This package is based on this long standing [pull request](https://github.com/encode/starlette/pull/499) in the
-mainstream by the same author.
+Advanced sessions for Starlette and FastAPI frameworks
+
+![PyPI](https://img.shields.io/pypi/v/starsessions)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/alex-oleshkevich/starsessions/Lint%20and%20test)
+![GitHub](https://img.shields.io/github/license/alex-oleshkevich/starsessions)
+![Libraries.io dependency status for latest release](https://img.shields.io/librariesio/release/pypi/starsessions)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/starsessions)
+![GitHub Release Date](https://img.shields.io/github/release-date/alex-oleshkevich/starsessions)
 
 ## Installation
 
@@ -19,33 +25,80 @@ Use `redis` extra for [Redis support](#redis).
 
 See example application in [`examples/`](examples) directory of this repository.
 
-## Enable session support
+## Usage
 
-In order to enable session support add `starsessions.SessionMiddleware` to your application.
+1. Add `starsessions.SessionMiddleware` to your application to enable session support,
+2. Configure session backend and pass it to the middleware,
+3. Load session in your view using `load_session` utility.
 
 ```python
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
-from starsessions import SessionMiddleware, CookieBackend
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 
-middleware = [
-    Middleware(SessionMiddleware, backend=CookieBackend(secret_key='TOP SECRET', max_age=3600 * 24 * 14)),
-]
+from starsessions import CookieBackend, load_session, SessionMiddleware
 
-app = Starlette(middleware=middleware, **other_options)
+
+async def index_view(request):
+    await load_session(request)
+
+    session_data = request.session
+    return JSONResponse(session_data)
+
+
+session_lifetime = 3600 * 24 * 14  # 14 days
+session_store = CookieBackend(secret_key='TOP SECRET', max_age=session_lifetime)
+
+app = Starlette(
+    middleware=[
+        Middleware(SessionMiddleware, backend=session_store, max_age=session_lifetime),
+    ],
+    routes=[
+        Route('/', index_view),
+    ]
+)
 ```
 
-### Session autoloading
+### Session autoload
 
-Note, for performance reasons session won't be autoloaded by default, you need to explicitly
-call `await request.session.load()` before accessing the session otherwise `SessionNotLoaded` exception will be raised.
-You can change this behavior by passing `autoload=True` to your middleware settings:
+For performance reasons session is not autoloaded by default. Sometimes it is annoying to call `load_session` too often.
+We ship `SessionAutoloadMiddleware` to reduce amount of boilerplate code by autoloading session.
+
+You have to options: always autoload or autoload for specific paths only. Here are examples:
 
 ```python
-from starlette.middleware import Middleware
-from starsessions import SessionMiddleware, CookieBackend
 
-Middleware(SessionMiddleware, backend=CookieBackend(secret_key='TOP SECRET', max_age=3600 * 24 * 14), autoload=True)
+from starlette.middleware import Middleware
+
+from starsessions import CookieBackend, SessionAutoloadMiddleware, SessionMiddleware
+
+session_lifetime = 3600 * 24 * 14  # 14 days
+session_store = CookieBackend(secret_key='TOP SECRET', max_age=session_lifetime)
+
+# Autoload session for every request
+
+middleware = [
+    Middleware(SessionMiddleware, backend=session_store),
+    Middleware(SessionAutoloadMiddleware),
+]
+
+# Autoload session for selected paths
+
+middleware = [
+    Middleware(SessionMiddleware, backend=session_store),
+    Middleware(SessionAutoloadMiddleware, paths=['/admin', '/app']),
+]
+
+# regex patterns also supported
+import re
+
+admin_rx = re.compile('/admin*')
+
+middleware = [
+    Middleware(SessionMiddleware, backend=session_store),
+    Middleware(SessionAutoloadMiddleware, paths=[admin_rx]),
+]
 ```
 
 ### Cookie path
@@ -57,7 +110,9 @@ for admin area (which is hosted under `/admin` path prefix), use `path="/admin"`
 from starlette.middleware import Middleware
 from starsessions import SessionMiddleware
 
-Middleware(SessionMiddleware, path='/admin', ...)
+middleware = [
+    Middleware(SessionMiddleware, path='/admin'),
+]
 ```
 
 All other URLs not matching value of `path` will not receive cookie thus session will be unavailable.
@@ -70,7 +125,9 @@ You can also specify which hosts can receive a cookie by passing `domain` argume
 from starlette.middleware import Middleware
 from starsessions import SessionMiddleware
 
-Middleware(SessionMiddleware, domain='example.com', ...)
+middleware = [
+    Middleware(SessionMiddleware, domain='example.com'),
+]
 ```
 
 > Note, this makes session cookie available for subdomains too.
@@ -79,13 +136,16 @@ Middleware(SessionMiddleware, domain='example.com', ...)
 
 ### Session-only cookies
 
-If you want session cookie to automatically remove from tbe browser when tab closes then set `max_age` to `0`:
+If you want session cookie to automatically remove from tbe browser when tab closes then set `max_age` to `0`.
+> Note, this depends on browser implementation!
 
 ```python
 from starlette.middleware import Middleware
 from starsessions import SessionMiddleware
 
-Middleware(SessionMiddleware, max_age=0, ...)
+middleware = [
+    Middleware(SessionMiddleware, max_age=0),
+]
 ```
 
 ## Built-in backends
@@ -113,6 +173,7 @@ Stores session data in a Redis server. The backend accepts either connection URL
 
 ```python
 import aioredis
+
 from starsessions.backends.redis import RedisBackend
 
 backend = RedisBackend('redis://localhost')
@@ -126,16 +187,20 @@ You can optionally include an expiry time for the Redis keys. This will ensure t
 automatically.
 
 ```python
-import aioredis
-from starsessions.backends.redis import RedisBackend
+
+from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
+
+from starsessions.backends.redis import RedisBackend
 
 ...
 
 max_age = 60 * 60 * 24  # in seconds
 
 backend = RedisBackend("redis://localhost", expire=max_age)
-middleware = [Middleware(SessionMiddleware, backend=backend, autoload=True, max_age=max_age)]
+middleware = [
+    Middleware(SessionMiddleware, backend=backend, max_age=max_age),
+]
 ```
 
 Normally, the same `max_age` should be used for Redis expiry times and for the SessionMiddleware.
@@ -157,8 +222,9 @@ Here is an example of how we can create a memory-based session backend. Note, it
 returns session ID as a string value.
 
 ```python
-from starlette.sessions import SessionBackend
 from typing import Dict
+
+from starsessions import SessionBackend
 
 
 # instance of class which manages session persistence
@@ -171,9 +237,8 @@ class InMemoryBackend(SessionBackend):
         """ Read session data from a data source using session_id. """
         return self._storage.get(session_id, {})
 
-    async def write(self, data: Dict, session_id: str = None) -> str:
+    async def write(self, session_id: str, data: Dict) -> str:
         """ Write session data into data source and return session id. """
-        session_id = session_id or await self.generate_id()
         self._storage[session_id] = data
         return session_id
 
@@ -196,11 +261,7 @@ by extending `starsessions.Serializer` class.
 
 ## Session termination
 
-The session cookie will be automatically removed if session has no data by the middleware.
-```python
-request.session.clear()
-```
-You can manually remove session data and clear underlying storage by calling `await request.session.delete()`
+The middleware will remove session data and cookie if session has no data. Use `request.session.clear` to empty data.
 
 ## Regenerating session ID
 
@@ -210,6 +271,7 @@ For that, use `starsessions.session.regenerate_session_id(connection)` utility.
 ```python
 from starsessions.session import regenerate_session_id
 from starlette.responses import Response
+
 
 def login(request):
     regenerate_session_id(request)
