@@ -1,8 +1,20 @@
+import os
 import pytest
+from pytest_asyncio.plugin import SubRequest
 
 from starsessions.backends.base import SessionBackend
 from starsessions.backends.redis import RedisBackend
-from starsessions.session import Session
+
+
+def redis_key_callable(session_id: str) -> str:
+    return f"this:is:a:redis:key:{session_id}"
+
+
+@pytest.fixture(params=[None, redis_key_callable], ids=["default", "using redis_key_callable"])
+def redis_backend(request: SubRequest) -> SessionBackend:
+    redis_key = request.param
+    url = os.environ.get("REDIS_URL", "redis://localhost")
+    return RedisBackend(url, redis_key_func=redis_key)
 
 
 @pytest.mark.asyncio
@@ -29,20 +41,6 @@ async def test_redis_exists(redis_backend: SessionBackend) -> None:
 @pytest.mark.asyncio
 async def test_redis_empty_session(redis_backend: SessionBackend) -> None:
     assert await redis_backend.read("unknown_session_id") == b''
-
-
-def test_session_is_empty(redis_session: Session) -> None:
-    assert redis_session.is_empty is True
-
-    redis_session["key"] = "value"
-    assert redis_session.is_empty is False
-
-
-def test_session_is_modified(redis_session: Session) -> None:
-    assert redis_session.is_modified is False
-
-    redis_session["key"] = "value"
-    assert redis_session.is_modified is True
 
 
 def test_improperly_configured_redis_key() -> None:

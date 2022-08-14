@@ -6,7 +6,7 @@ Usage:
 
 Access localhost:8000/ to see that no session cookie available
 access localhost:8000/admin to see session data
-access localhost:8000/admin/clean to clear session data
+access localhost:8000/admin/set to set session data
 access localhost:8000/admin/clean to clear session data
 """
 import datetime
@@ -16,7 +16,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
 from starlette.routing import Route
 
-from starsessions import SessionMiddleware
+from starsessions import CookieBackend, SessionMiddleware
 
 
 async def landing(request: Request) -> JSONResponse:
@@ -47,5 +47,7 @@ routes = [
     Route("/admin/set", endpoint=set_time),
     Route("/admin/clean", endpoint=clean),
 ]
-middleware = [Middleware(SessionMiddleware, secret_key="secret", autoload=True, path='/admin')]
+middleware = [
+    Middleware(SessionMiddleware, backend=CookieBackend(secret_key='key', max_age=18000), autoload=True, path='/admin')
+]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

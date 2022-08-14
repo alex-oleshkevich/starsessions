@@ -16,7 +16,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
 from starlette.routing import Host, Route, Router
 
-from starsessions import SessionMiddleware
+from starsessions import CookieBackend, SessionMiddleware
 
 
 async def landing(request: Request) -> JSONResponse:
@@ -56,5 +56,9 @@ routes = [
         ),
     ),
 ]
-middleware = [Middleware(SessionMiddleware, secret_key="secret", autoload=True, domain='localhost')]
+middleware = [
+    Middleware(
+        SessionMiddleware, backend=CookieBackend(secret_key='key', max_age=18000), autoload=True, domain='localhost'
+    )
+]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

@@ -5,7 +5,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from starsessions.backends import SessionBackend
 from starsessions.serializers import JsonSerializer, Serializer
-from starsessions.session import Session, generate_id
+from starsessions.session import SessionHandler
 
 
 class SessionMiddleware:
@@ -34,9 +34,6 @@ class SessionMiddleware:
         if https_only:  # Secure flag can be used with HTTPS only
             self.security_flags += "; secure"
 
-        # maintain backward compatibility while #27 is not implemented
-        setattr(self.backend, 'serializer', self.serializer)
-
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] not in ("http", "websocket"):  # pragma: no cover
             await self.app(scope, receive, send)
@@ -44,25 +41,32 @@ class SessionMiddleware:
 
         connection = HTTPConnection(scope)
         session_id = connection.cookies.get(self.session_cookie)
+        handler = SessionHandler(connection, session_id, self.backend, self.serializer)
 
-        session = Session(self.backend, session_id)
-        scope["session"] = session
+        scope["session"] = {}
+        scope["session_handler"] = handler
+
         if self.autoload:
-            await session.load()
+            await handler.load()
 
         async def send_wrapper(message: Message) -> None:
             if message["type"] != "http.response.start":
                 await send(message)
                 return
 
-            if not session.is_loaded:  # session was not accessed, do nothing
+            if not handler.is_loaded:  # session was not loaded, do nothing
                 await send(message)
                 return
 
             nonlocal session_id
             path = self.path or scope.get("root_path", "") or "/"
 
-            if session.is_empty:
+            if handler.is_empty:
+                # if session was initially empty then do nothing
+                if handler.initially_empty:
+                    await send(message)
+                    return
+
                 # session data loaded but empty, no matter whether it was initially empty or cleared
                 # we have to remove the cookie and clear the storage
                 if not self.path or self.path and scope['path'].startswith(self.path):
@@ -73,13 +77,13 @@ class SessionMiddleware:
                         self.security_flags,
                     )
                     headers.append("Set-Cookie", header_value)
-                    await self.backend.remove(scope['session'].session_id)
+                    if handler.session_id:
+                        await self.backend.remove(handler.session_id)
                 await send(message)
                 return
 
             # persist session data
-            session_id = session_id or generate_id()
-            session_id = await self.backend.write(session_id, self.serializer.serialize(session.data))
+            session_id = await handler.save()
 
             headers = MutableHeaders(scope=message)
             header_parts = [
