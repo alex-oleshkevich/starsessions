@@ -28,7 +28,7 @@ class CookieBackend(SessionBackend):
         except BadSignature:
             return {}
 
-    async def write(self, data: typing.Dict[str, typing.Any], session_id: typing.Optional[str] = None) -> str:
+    async def write(self, session_id: str, data: typing.Dict[str, typing.Any]) -> str:
         """The data is a session id in this backend."""
         encoded_data = b64encode(self._serializer.serialize(data).encode("utf-8"))
         return self._signer.sign(encoded_data).decode("utf-8")
