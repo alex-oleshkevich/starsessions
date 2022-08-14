@@ -1,28 +1,30 @@
-import re
+import pytest
 import typing
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.requests import HTTPConnection, Request
+from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 from starlette.testclient import TestClient
+from starlette.types import Receive, Scope, Send
 
-from starsessions import CookieBackend, InMemoryBackend, SessionBackend, SessionMiddleware
+from starsessions import SessionBackend, SessionMiddleware
+from starsessions.session import load_session
 
 
 def view_session(request: Request) -> JSONResponse:
-    return JSONResponse({"session": dict(request.session)})
+    return JSONResponse({"session": request.session})
 
 
 async def update_session(request: Request) -> JSONResponse:
     data = await request.json()
     request.session.update(data)
-    return JSONResponse({"session": dict(request.session)})
+    return JSONResponse({"session": request.session})
 
 
 async def clear_session(request: Request) -> JSONResponse:
     request.session.clear()
-    return JSONResponse({"session": dict(request.session)})
+    return JSONResponse({"session": request.session})
 
 
 def create_app(**middleware_kwargs: typing.Any) -> Starlette:
@@ -38,187 +40,258 @@ def create_app(**middleware_kwargs: typing.Any) -> Starlette:
     )
 
 
-def test_session_middleware(cookie: SessionBackend) -> None:
-    """Verify common use cases: read session, modify session, and clear session."""
-    client = TestClient(
-        create_app(backend=cookie, autoload=True),
-    )
-    response = client.get("/view_session")
-    assert response.json() == {"session": {}}
+def test_loads_empty_session(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
 
-    response = client.post("/update_session", json={"some": "data"})
-    assert response.json() == {"session": {"some": "data"}}
+        await load_session(connection)
 
-    # check cookie max-age
-    set_cookie = response.headers["set-cookie"]
-    max_age_matches = re.search(r"; Max-Age=([0-9]+);", set_cookie)
-    assert max_age_matches is not None
-    assert int(max_age_matches[1]) == 14 * 24 * 3600
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
 
-    response = client.get("/view_session")
-    assert response.json() == {"session": {"some": "data"}}
-
-    response = client.post("/clear_session")
-    assert response.json() == {"session": {}}
-
-    response = client.get("/view_session")
-    assert response.json() == {"session": {}}
+    app = SessionMiddleware(app, backend=backend)
+    client = TestClient(app)
+    assert client.get('/').json() == {}
 
 
-def test_storage_has_no_data_for_session_id(cookie: SessionBackend) -> None:
-    """Test a case when session ID is set but storage has no value for it."""
-    headers = {"cookie": "session=someid"}
-    client = TestClient(create_app(backend=cookie, autoload=True))
-    response = client.get("/view_session", headers=headers)
-    assert response.json() == {"session": {}}
+def test_handles_not_existing_session(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+
+        await load_session(connection)
+
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend)
+    client = TestClient(app)
+    assert client.get('/', cookies={'session': 'session_id'}).json() == {}
 
 
-def test_cookie_should_expire_when_max_age_is_in_past(cookie: SessionBackend) -> None:
-    """Session cookie must be removed if current time is greater than session's max age."""
-    client = TestClient(create_app(backend=CookieBackend(secret_key='key', max_age=-1), max_age=-1, autoload=True))
+def test_loads_existing_session(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
 
-    response = client.post("/update_session", json={"some": "data"})
-    assert response.json() == {"session": {"some": "data"}}
+        await backend.write('session_id', b'{"key": "value"}')
+        await load_session(connection)
 
-    # requests removes expired cookies from response.cookies, we need to
-    # fetch session id from the headers and pass it explicitly
-    expired_cookie_header = response.headers["set-cookie"]
-    match = re.search(r"session=([^;]*);", expired_cookie_header)
-    assert match
-    expired_session_value = match[1]
-    response = client.get("/view_session", cookies={"session": expired_session_value})
-    assert response.json() == {"session": {}}
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend)
+    client = TestClient(app)
+    assert client.get('/', cookies={'session': 'session_id'}).json() == {'key': 'value'}
 
 
-def test_secure_session_cookie(cookie: SessionBackend) -> None:
-    """Test that insecure clients (non-TLS) cannot access cookie when https_only=True."""
-    secure_client = TestClient(
-        create_app(backend=cookie, https_only=True, autoload=True),
-        base_url="https://testserver",
-    )
-    unsecure_client = TestClient(
-        create_app(backend=cookie, https_only=True, autoload=True),
-        base_url="http://testserver",
-    )
+def test_send_cookie_if_session_created(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
 
-    response = unsecure_client.get("/view_session")
-    assert response.json() == {"session": {}}
+        connection.session["key"] = "value"
+        response = Response('')
+        await response(scope, receive, send)
 
-    response = unsecure_client.post("/update_session", json={"some": "data"})
-    assert response.json() == {"session": {"some": "data"}}
-
-    response = unsecure_client.get("/view_session")
-    assert response.json() == {"session": {}}
-
-    response = secure_client.get("/view_session")
-    assert response.json() == {"session": {}}
-
-    response = secure_client.post("/update_session", json={"some": "data"})
-    assert response.json() == {"session": {"some": "data"}}
-
-    response = secure_client.get("/view_session")
-    assert response.json() == {"session": {"some": "data"}}
-
-    response = secure_client.post("/clear_session")
-    assert response.json() == {"session": {}}
-
-    response = secure_client.get("/view_session")
-    assert response.json() == {"session": {}}
+    app = SessionMiddleware(app, backend=backend)
+    client = TestClient(app)
+    response = client.get('/')
+    assert 'session' in response.headers.get('set-cookie')
 
 
-def test_session_cookie_subpath(cookie: SessionBackend) -> None:
-    """
-    Sub apps with own session should be separated from the main session by default.
+def test_send_cookie_if_session_updated(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
 
-    Cookies for main app and sub apps are separated by path attribute.
-    """
-    app = create_app(backend=cookie, autoload=True)
-    second_app = create_app(backend=cookie, autoload=True)
-    app.mount("/second_app", second_app)
+        await backend.write('session_id', b'{"key2": "value2"}')
+        await load_session(connection)
 
-    client = TestClient(app, base_url="http://testserver/second_app")
-    response = client.post("second_app/update_session", json={"some": "data"})
-    set_cookie = response.headers["set-cookie"]
-    match = re.search(r"; path=(\S+);", set_cookie)
-    assert match
-    cookie_path = match.groups()[0]
-    assert cookie_path == "/second_app"
+        connection.session["key"] = "value"
+        response = Response('')
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend)
+    client = TestClient(app)
+    response = client.get('/')
+    assert 'session' in response.headers.get('set-cookie')
 
 
-def test_session_middleware_with_custom_backend() -> None:
-    """SessionMiddleware should accept and work with custom backend."""
-    backend = InMemoryBackend()
+def test_send_cookie_if_session_destroyed(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
 
-    client = TestClient(create_app(backend=backend, autoload=True))
-    response = client.post("/update_session", json={'some': 'data'}, headers={"cookie": "session=someid"})
-    assert response.json() == {"session": {'some': 'data'}}
-    assert backend.data == {'someid': b'{"some": "data"}'}, 'Session backend was not updated.'
+        await backend.write('session_id', b'{"key2": "value2"}')
+        await load_session(connection)
+
+        connection.session.clear()
+        response = Response('')
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend)
+    client = TestClient(app)
+    response = client.get('/', cookies={'session': 'session_id'})
+    assert 'session' in response.headers.get('set-cookie')
+    assert '01 Jan 1970 00:00:00 GMT' in response.headers.get('set-cookie')
 
 
-def test_session_clears_on_browser_exit(cookie: SessionBackend) -> None:
+@pytest.mark.asyncio
+async def test_will_clear_storage_if_session_destroyed(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+
+        await backend.write('session_id', b'{"key2": "value2"}')
+        await load_session(connection)
+
+        connection.session.clear()
+        response = Response('')
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend)
+    client = TestClient(app)
+    client.get('/', cookies={'session': 'session_id'})
+    assert not await backend.exists('session_id')
+
+
+def test_will_not_send_cookie_if_initially_empty_session_destroyed(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+
+        connection.session.clear()
+        response = Response('')
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend)
+    client = TestClient(app)
+    response = client.get('/', cookies={'session': 'session_id'})
+    assert 'set-cookie' not in response.headers
+
+
+def test_will_not_send_cookie_if_session_was_not_loaded(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+
+        connection.session.clear()
+        response = Response('')
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend)
+    client = TestClient(app)
+    response = client.get('/', cookies={'session': 'session_id'})
+    assert 'set-cookie' not in response.headers
+
+
+def test_max_age_argument_set_in_cookie(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        connection.session['key'] = 'value'
+
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend, max_age=-1)
+    client = TestClient(app)
+    response = client.get('/')
+
+    # requests removes expired cookies from response.cookies,
+    assert 'max-age' in response.headers.get('set-cookie').lower()
+
+
+def test_same_site_argument_set_in_cookie(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        connection.session['key'] = 'value'
+
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend, same_site='none')
+    client = TestClient(app)
+    response = client.get('/')
+
+    assert 'samesite=none' in response.headers['set-cookie']
+
+
+def test_path_argument_set_in_cookie(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        connection.session['key'] = 'value'
+
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend, path='/admin')
+    client = TestClient(app)
+    response = client.get('/')
+
+    assert 'path=/admin' in response.headers['set-cookie'].lower()
+
+
+def test_domain_argument_set_in_cookie(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        connection.session['key'] = 'value'
+
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend, domain='example.com')
+    client = TestClient(app)
+    response = client.get('/')
+
+    assert 'domain=example.com' in response.headers['set-cookie'].lower()
+
+
+def test_set_secure_cookie(backend: SessionBackend) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        connection.session['key'] = 'value'
+
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, backend=backend, https_only=True)
+    client = TestClient(app)
+    response = client.get('/')
+
+    assert 'secure' in response.headers['set-cookie'].lower()
+
+
+def test_session_only_cookies(backend: SessionBackend) -> None:
     """
     When max-age is 0 then we set up a session-only cookie.
 
     This cookie will expire immediately after closing browser.
     """
-    client = TestClient(create_app(backend=cookie, autoload=True, max_age=0))
 
-    response = client.get("/view_session")
-    assert response.json() == {"session": {}}
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        connection.session['key'] = 'value'
 
-    response = client.post("/update_session", json={"some": "data"})
-    assert response.json() == {"session": {"some": "data"}}
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
 
-    # when max_age=0 then no Max-Age cookie component expected
-    set_cookie = response.headers["set-cookie"]
-    assert 'Max-Age' not in set_cookie
-
-    client.cookies.clear_session_cookies()
-    response = client.get("/view_session")
-    assert response.json() == {"session": {}}
+    app = SessionMiddleware(app, backend=backend, max_age=0)
+    client = TestClient(app)
+    response = client.get('/')
+    assert 'max-age' not in response.headers['set-cookie'].lower()
 
 
-def test_session_cookie_should_be_set_to_custom_path(cookie: SessionBackend) -> None:
-    """
-    We should be able to enable sessions for a specific paths only.
+@pytest.mark.asyncio
+async def test_session_autoload(backend: SessionBackend) -> None:
+    await backend.write('session_id', b'{"key": "value"}')
 
-    In this test case, session cookie should be bound to the /admin.
-    """
-    client = TestClient(create_app(backend=cookie, autoload=True, path='/admin'))
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
 
-    response = client.post("/update_session", json={"some": "data"})
-    assert response.json() == {"session": {"some": "data"}}
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
 
-    # check cookie max-age
-    set_cookie = response.headers["set-cookie"]
-    assert 'path=/admin' in set_cookie
-
-
-def test_session_cookie_domain(cookie: SessionBackend) -> None:
-    """
-    We should be able to bind session cookie to a specific domain.
-
-    In this test case, session cookie should be bound to the example.com domain.
-    """
-    client = TestClient(create_app(backend=cookie, autoload=True, domain='example.com'))
-
-    response = client.post("/update_session", json={"some": "data"})
-    assert response.json() == {"session": {"some": "data"}}
-
-    # check cookie max-age
-    set_cookie = response.headers["set-cookie"]
-    assert 'Domain=example.com' in set_cookie
-
-
-def test_middleware_has_to_clean_storage_after_removing_cookie() -> None:
-    """When SessionMiddleware removes cookie it also has to clean the storage."""
-    backend = InMemoryBackend()
-    client = TestClient(create_app(backend=backend, autoload=True))
-
-    # set some session data
-    client.post("/update_session", json={"some": "data"})
-    assert len(backend.data)  # it now contains 1 session
-
-    # clear session data, the middleware has to free storage space
-    client.post("/clear_session")
-    assert not len(backend.data)  # it now contains zero sessions
+    app = SessionMiddleware(app, backend=backend, autoload=True)
+    client = TestClient(app)
+    assert client.get('/', cookies={'session': 'session_id'}).json() == {'key': 'value'}

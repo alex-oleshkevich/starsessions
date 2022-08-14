@@ -26,10 +26,10 @@ In order to enable session support add `starsessions.SessionMiddleware` to your 
 ```python
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
-from starsessions import SessionMiddleware
+from starsessions import SessionMiddleware, CookieBackend
 
 middleware = [
-    Middleware(SessionMiddleware, secret_key='TOP SECRET'),
+    Middleware(SessionMiddleware, backend=CookieBackend(secret_key='TOP SECRET', max_age=3600 * 24 * 14)),
 ]
 
 app = Starlette(middleware=middleware, **other_options)
@@ -42,7 +42,10 @@ call `await request.session.load()` before accessing the session otherwise `Sess
 You can change this behavior by passing `autoload=True` to your middleware settings:
 
 ```python
-Middleware(SessionMiddleware, secret_key='TOP SECRET', autoload=True)
+from starlette.middleware import Middleware
+from starsessions import SessionMiddleware, CookieBackend
+
+Middleware(SessionMiddleware, backend=CookieBackend(secret_key='TOP SECRET', max_age=3600 * 24 * 14), autoload=True)
 ```
 
 ### Cookie path
@@ -51,7 +54,10 @@ You can pass `path` arguments to enable session cookies on specific URLs. For ex
 for admin area (which is hosted under `/admin` path prefix), use `path="/admin"` middleware argument.
 
 ```python
-Middleware(SessionMiddleware, path = '/admin', ...)
+from starlette.middleware import Middleware
+from starsessions import SessionMiddleware
+
+Middleware(SessionMiddleware, path='/admin', ...)
 ```
 
 All other URLs not matching value of `path` will not receive cookie thus session will be unavailable.
@@ -61,39 +67,25 @@ All other URLs not matching value of `path` will not receive cookie thus session
 You can also specify which hosts can receive a cookie by passing `domain` argument to the middleware.
 
 ```python
-Middleware(SessionMiddleware, domain = 'example.com', ...)
+from starlette.middleware import Middleware
+from starsessions import SessionMiddleware
+
+Middleware(SessionMiddleware, domain='example.com', ...)
 ```
 
 > Note, this makes session cookie available for subdomains too.
-> For example, when you set `domain=example.com` then session cookie will be available on subdomains like `app.example.com`.
+> For example, when you set `domain=example.com` then session cookie will be available on subdomains
+> like `app.example.com`.
 
 ### Session-only cookies
 
 If you want session cookie to automatically remove from tbe browser when tab closes then set `max_age` to `0`:
 
 ```python
+from starlette.middleware import Middleware
+from starsessions import SessionMiddleware
+
 Middleware(SessionMiddleware, max_age=0, ...)
-```
-
-### Default session backend
-
-The default backend is `CookieBackend`. You don't need to configure it just pass `secret_key` argument and the backend
-will be automatically configured for you.
-
-## Change default backend
-
-When you want to use a custom session storage then pass a desired backend instance via `backend` argument of the
-middleware.
-
-```python
-from starlette.applications import Starlette
-from starlette.middleware.sessions import SessionMiddleware
-from starlette.sessions import CookieBackend
-
-backend = CookieBackend(secret_key='secret', max_age=3600)
-
-app = Starlette()
-app.add_middleware(SessionMiddleware, backend=backend)
 ```
 
 ## Built-in backends
@@ -130,7 +122,8 @@ redis = aioredis.from_url('redis://localhost')
 backend = RedisBackend(connection=redis)
 ```
 
-You can optionally include an expire time for the Redis keys. This will ensure that sessions get deleted from Redis automatically.
+You can optionally include an expiry time for the Redis keys. This will ensure that sessions get deleted from Redis
+automatically.
 
 ```python
 import aioredis
@@ -201,13 +194,24 @@ Some backends (like `RedisBackend`) optionally accept `serializer` argument that
 deserialize session data. By default, we provide (and use) `starsessions.JsonSerializer` but you can implement your own
 by extending `starsessions.Serializer` class.
 
-
 ## Session termination
 
 The session cookie will be automatically removed if session has no data by the middleware.
+```python
+request.session.clear()
+```
 You can manually remove session data and clear underlying storage by calling `await request.session.delete()`
 
 ## Regenerating session ID
 
 Sometimes you need a new session ID to avoid session fixation attacks (for example, after successful signs in).
-For that, use `request.session.regenerate_id()`.
+For that, use `starsessions.session.regenerate_session_id(connection)` utility.
+
+```python
+from starsessions.session import regenerate_session_id
+from starlette.responses import Response
+
+def login(request):
+    regenerate_session_id(request)
+    return Response('successfully signed in')
+```

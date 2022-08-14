@@ -1,112 +1,101 @@
+from __future__ import annotations
+
 import secrets
 import typing
+from starlette.requests import HTTPConnection
 
-from .backends.base import SessionBackend
-from .exceptions import SessionNotLoaded
+from starsessions.backends import SessionBackend
+from starsessions.serializers import Serializer
 
 
-def generate_id() -> str:
+def generate_session_id() -> str:
     """Generate a new, cryptographically strong session ID."""
     return secrets.token_hex(128)
 
 
-class Session:
-    def __init__(self, backend: SessionBackend, session_id: typing.Optional[str] = None) -> None:
+def regenerate_session_id(connection: HTTPConnection) -> str:
+    """
+    Generate new session ID and set it as current session ID.
+
+    Returns new session ID.
+    """
+    return get_session_handler(connection).regenerate_id()
+
+
+def get_session_id(connection: HTTPConnection) -> typing.Optional[str]:
+    """Get current session ID."""
+    return get_session_handler(connection).session_id
+
+
+def get_session_handler(connection: HTTPConnection) -> SessionHandler:
+    """
+    Get session handler.
+
+    Session handler is a tool for low level session management.
+    """
+    return typing.cast(SessionHandler, connection.scope['session_handler'])
+
+
+async def load_session(connection: HTTPConnection) -> None:
+    """
+    Initialize session.
+
+    Will replace any existing session data. Should be called once per request.
+    """
+
+    await get_session_handler(connection).load()
+
+
+def is_loaded(connection: HTTPConnection) -> bool:
+    """Test if session has been loaded for this connection."""
+    return get_session_handler(connection).is_loaded
+
+
+class SessionHandler:
+    """
+    A tool for low level session management.
+
+    This is private API, no backward compatibility guarantee.
+    """
+
+    def __init__(
+        self,
+        connection: HTTPConnection,
+        session_id: typing.Optional[str],
+        backend: SessionBackend,
+        serializer: Serializer,
+    ) -> None:
+        self.connection = connection
         self.session_id = session_id
-        self._data: typing.Dict[str, typing.Any] = {}
-        self._backend = backend
+        self.backend = backend
+        self.serializer = serializer
         self.is_loaded = False
-        self._is_modified = False
+        self.initially_empty = False
+
+    async def load(self) -> None:
+        self.is_loaded = True
+        data = {}
+        if self.session_id:
+            data = self.serializer.deserialize(
+                await self.backend.read(self.session_id),
+            )
+
+        self.connection.session.clear()  # replace session contents to avoid mixing existing and new session data
+        self.connection.session.update(data)
+
+        self.initially_empty = len(self.connection.session) == 0
+
+    async def save(self) -> str:
+        self.session_id = await self.backend.write(
+            self.session_id or generate_session_id(),
+            self.serializer.serialize(self.connection.session),
+        )
+        return self.session_id
 
     @property
     def is_empty(self) -> bool:
-        """Check if session has data."""
-        return len(self.keys()) == 0
+        return len(self.connection.session) == 0
 
-    @property
-    def is_modified(self) -> bool:
-        """Check if session data has been modified,"""
-        return self._is_modified
-
-    @property
-    def data(self) -> typing.Dict[str, typing.Any]:
-        if not self.is_loaded:
-            raise SessionNotLoaded("Session is not loaded.")
-        return self._data
-
-    @data.setter
-    def data(self, value: typing.Dict[str, typing.Any]) -> None:
-        self._data = value
-
-    async def load(self) -> None:
-        """
-        Load data from the backend.
-
-        Subsequent calls do not take any effect.
-        """
-        if self.is_loaded:
-            return
-
-        if not self.session_id:
-            self.data = {}
-        else:
-            serializer = getattr(self._backend, 'serializer')
-            self.data = serializer.deserialize(await self._backend.read(self.session_id))
-
-        self.is_loaded = True
-
-    async def delete(self) -> None:
-        if self.session_id:
-            self.clear()
-            await self._backend.remove(self.session_id)
-
-    async def flush(self) -> str:
-        await self.delete()
-        return await self.regenerate_id()
-
-    async def regenerate_id(self) -> str:
-        self.session_id = generate_id()
-        self._is_modified = True
+    def regenerate_id(self) -> str:
+        self.session_id = generate_session_id()
         return self.session_id
-
-    def keys(self) -> typing.KeysView[str]:
-        return self.data.keys()
-
-    def values(self) -> typing.ValuesView[typing.Any]:
-        return self.data.values()
-
-    def items(self) -> typing.ItemsView[str, typing.Any]:
-        return self.data.items()
-
-    def pop(self, key: str, default: typing.Any = None) -> typing.Any:
-        self._is_modified = True
-        return self.data.pop(key, default)
-
-    def get(self, name: str, default: typing.Any = None) -> typing.Any:
-        return self.data.get(name, default)
-
-    def setdefault(self, key: str, default: typing.Any) -> None:
-        self._is_modified = True
-        self.data.setdefault(key, default)
-
-    def clear(self) -> None:
-        self._is_modified = True
-        self.data.clear()
-
-    def update(self, *args: typing.Any, **kwargs: typing.Any) -> None:
-        self._is_modified = True
-        self.data.update(*args, **kwargs)
-
-    def __contains__(self, key: str) -> bool:
-        return key in self.data
-
-    def __setitem__(self, key: str, value: typing.Any) -> None:
-        self._is_modified = True
-        self.data[key] = value
-
-    def __getitem__(self, key: str) -> typing.Any:
-        return self.data[key]
-
-    def __delitem__(self, key: str) -> None:
-        self._is_modified = True
-        del self.data[key]

@@ -1,143 +1,64 @@
 import pytest
-import typing
+from starlette.requests import HTTPConnection
 
-from starsessions import Session
-from starsessions.backends import SessionBackend
-from starsessions.exceptions import SessionNotLoaded
+from starsessions import Serializer, SessionBackend
+from starsessions.session import (
+    SessionHandler,
+    generate_session_id,
+    get_session_handler,
+    get_session_id,
+    is_loaded,
+    load_session,
+    regenerate_session_id,
+)
+
+
+def test_generate_session_id() -> None:
+    assert len(generate_session_id()) == 256
+
+
+def test_regenerate_session_id(backend: SessionBackend, serializer: Serializer) -> None:
+    scope = {'type': 'http'}
+    base_session_id = 'some_id'
+    connection = HTTPConnection(scope)
+    connection.scope['session'] = {}
+    connection.scope['session_handler'] = SessionHandler(connection, base_session_id, backend, serializer)
+
+    session_id = regenerate_session_id(connection)
+    assert session_id
+    assert session_id != base_session_id
+
+
+def test_get_session_id(backend: SessionBackend, serializer: Serializer) -> None:
+    scope = {'type': 'http'}
+    base_session_id = 'some_id'
+    connection = HTTPConnection(scope)
+    connection.scope['session'] = {}
+    connection.scope['session_handler'] = SessionHandler(connection, base_session_id, backend, serializer)
+
+    session_id = get_session_id(connection)
+    assert session_id == base_session_id
+
+
+def test_get_session_handler(backend: SessionBackend, serializer: Serializer) -> None:
+    scope = {'type': 'http'}
+    base_session_id = 'some_id'
+    connection = HTTPConnection(scope)
+    connection.scope['session'] = {}
+    connection.scope['session_handler'] = SessionHandler(connection, base_session_id, backend, serializer)
+
+    assert get_session_handler(connection) == connection.scope['session_handler']
 
 
 @pytest.mark.asyncio
-async def test_session_load(in_memory: SessionBackend) -> None:
-    await in_memory.write("session_id", b'{"key": "value"}')
+async def test_load_session(backend: SessionBackend, serializer: Serializer) -> None:
+    scope = {'type': 'http'}
+    base_session_id = 'session_id'
+    connection = HTTPConnection(scope)
+    connection.scope['session'] = {}
+    connection.scope['session_handler'] = SessionHandler(connection, base_session_id, backend, serializer)
 
-    session = Session(in_memory, "session_id")
-    await session.load()
-    assert session['key'] == 'value'
-
-
-@pytest.mark.asyncio
-async def test_session_load_with_new_session(
-    in_memory: SessionBackend, session_payload: typing.Dict[str, typing.Any]
-) -> None:
-    session = Session(in_memory)
-    await session.load()
-    assert len(session.keys()) == 0
-
-
-@pytest.mark.asyncio
-async def test_session_subsequent_load(in_memory: SessionBackend) -> None:
-    """It should return the cached data on any sequential call to load()."""
-    await in_memory.write("session_id", b'{"key": "value"}')
-
-    session = Session(in_memory, "session_id")
-    await session.load()
-
-    assert "key" in session
-
-    # add key2 to session. this value should survive the second load() call
-    session["key2"] = "value2"
-    await session.load()
-
-    assert "key" in session
-    assert "key2" in session
-
-
-@pytest.mark.asyncio
-async def test_session_delete(in_memory: SessionBackend) -> None:
-    await in_memory.write("session_id", b'')
-
-    session = Session(in_memory, "session_id")
-    await session.load()
-    session["key"] = "value"
-    await session.delete()
-
-    assert await in_memory.exists("session_id") is False
-    assert session.is_modified is True
-    assert session.is_empty is True
-
-    # it shouldn't fail on non-persisted session
-    session = Session(in_memory)
-    await session.load()
-    await session.delete()
-
-    assert session.is_empty is True
-    assert session.is_modified is False
-
-
-def test_session_keys(in_memory_session: Session) -> None:
-    in_memory_session["key"] = True
-    assert list(in_memory_session.keys()) == ["key"]
-
-
-def test_session_values(in_memory_session: Session) -> None:
-    in_memory_session["key"] = "value"
-    assert list(in_memory_session.values()) == ["value"]
-
-
-def test_session_items(in_memory_session: Session) -> None:
-    in_memory_session["key"] = "value"
-    in_memory_session["key2"] = "value2"
-    assert list(in_memory_session.items()) == [
-        ("key", "value"),
-        ("key2", "value2"),
-    ]
-
-
-def test_session_pop(in_memory_session: Session) -> None:
-    in_memory_session["key"] = "value"
-    in_memory_session.pop("key")
-    assert "key" not in in_memory_session
-    assert in_memory_session.is_modified
-
-
-def test_session_get(in_memory_session: Session) -> None:
-    in_memory_session["key"] = "value"
-    assert in_memory_session.get("key") == "value"
-    assert in_memory_session.get("key2", "miss") == "miss"
-    assert in_memory_session.get("key3") is None
-
-
-def test_session_setdefault(in_memory_session: Session) -> None:
-    in_memory_session.setdefault("key", "value")
-    assert in_memory_session.get("key") == "value"
-    assert in_memory_session.is_modified is True
-
-
-def test_session_clear(in_memory_session: Session) -> None:
-    in_memory_session["key"] = "value"
-    in_memory_session.clear()
-    assert in_memory_session.is_empty is True
-    assert in_memory_session.is_modified is True
-
-
-def test_session_update(in_memory_session: Session) -> None:
-    in_memory_session.update({"key": "value"})
-    assert "key" in in_memory_session
-    assert in_memory_session.is_modified is True
-
-
-def test_session_setitem_and_contains(in_memory_session: Session) -> None:
-    # set item
-    in_memory_session["key"] = "value"  # __setitem__
-    assert "key" in in_memory_session  # __contain__
-    assert in_memory_session.is_modified is True
-
-
-def test_session_getitem(in_memory_session: Session) -> None:
-    in_memory_session["key"] = "value"  # __getitem__
-    assert in_memory_session["key"] == "value"
-
-
-def test_session_delitem(in_memory_session: Session) -> None:
-    in_memory_session["key"] = "value"
-    del in_memory_session["key"]  # __delitem__
-    assert "key" not in in_memory_session
-
-
-def test_session_denies_access_if_not_loaded(in_memory: SessionBackend) -> None:
-    session = Session(in_memory)
-    with pytest.raises(SessionNotLoaded):
-        session.data.keys()
-
-    with pytest.raises(SessionNotLoaded):
-        session["key"] = "value"
+    await backend.write('session_id', b'{"key": "value"}')
+    await load_session(connection)
+    assert is_loaded(connection)
+    assert connection.session == {'key': 'value'}

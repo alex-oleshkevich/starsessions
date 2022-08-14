@@ -14,7 +14,8 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 from starlette.routing import Route
 
-from starsessions import SessionMiddleware
+from starsessions import CookieBackend, SessionMiddleware
+from starsessions.session import regenerate_session_id
 
 
 async def homepage(request: Request) -> Response:
@@ -25,6 +26,7 @@ async def homepage(request: Request) -> Response:
     <label> Username <input type="text" name="username"> </label>
     <button type="submit">Sign in</button>
     </form>
+    <a href="/profile">My profile</a>
     """
     )
 
@@ -33,7 +35,7 @@ async def login(request: Request) -> Response:
     form_data = await request.form()
     username = form_data['username']
     request.session['username'] = username
-    request.session.regenerate_id()  # type: ignore[attr-defined]
+    regenerate_session_id(request)
     return RedirectResponse('/profile', 302)
 
 
@@ -65,5 +67,5 @@ routes = [
     Route("/logout", endpoint=logout, methods=['POST']),
     Route("/profile", endpoint=profile),
 ]
-middleware = [Middleware(SessionMiddleware, secret_key="secret", autoload=True)]
+middleware = [Middleware(SessionMiddleware, backend=CookieBackend(secret_key="secret", max_age=18000), autoload=True)]
 app = Starlette(debug=True, routes=routes, middleware=middleware)
