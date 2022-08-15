@@ -18,13 +18,12 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.7",
     "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7.0"
+python = "^3.8.0"
 starlette = "^0"
 itsdangerous = "^2.0.1"
 aioredis = { version = "^2.0.0", optional = true }
@@ -49,7 +48,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 target-version = ["py310"]
-skip-string-normalization = true
 line_length = 120
 
 [tool.isort]
