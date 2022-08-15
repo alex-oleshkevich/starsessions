@@ -29,7 +29,7 @@ See example application in [`examples/`](examples) directory of this repository.
 
 1. Add `starsessions.SessionMiddleware` to your application to enable session support,
 2. Configure session store and pass it to the middleware,
-3. Load session in your view using `load_session` utility.
+3. Load session in your view/middleware using `load_session` utility.
 
 ```python
 from starlette.applications import Starlette
@@ -47,12 +47,11 @@ async def index_view(request):
     return JSONResponse(session_data)
 
 
-session_lifetime = 3600 * 24 * 14  # 14 days
 session_store = CookieStore(secret_key='TOP SECRET')
 
 app = Starlette(
     middleware=[
-        Middleware(SessionMiddleware, store=session_store, lifetime=session_lifetime),
+        Middleware(SessionMiddleware, store=session_store, lifetime=3600 * 24 * 14),
     ],
     routes=[
         Route('/', index_view),
@@ -62,9 +61,9 @@ app = Starlette(
 
 ### Cookie security
 
-By default, the middleware uses strict default.
-The cookie lifetime is limited to session and only HTTPS protocol allowed. You can change these defaults by using
-`cookie_https_only` and `lifetime` arguments:
+By default, the middleware uses strict defaults.
+The cookie lifetime is limited to the browser session and send via HTTPS protocol only.
+You can change these defaults by changing `cookie_https_only` and `lifetime` arguments:
 
 ```python
 from starlette.middleware import Middleware
@@ -78,26 +77,24 @@ middleware = [
 ]
 ```
 
-The example above will let session usage over insecure HTTP transport and the session lifetime will be extended to 14
-days.
+The example above will let session usage over insecure HTTP transport and the session lifetime will be set to 14 days.
 
 ### Session autoload
 
 For performance reasons session is not autoloaded by default. Sometimes it is annoying to call `load_session` too often.
-We ship `SessionAutoloadMiddleware` to reduce amount of boilerplate code by autoloading session.
+We provide `SessionAutoloadMiddleware` to reduce amount of boilerplate code by autoloading session for you.
 
-You have to options: always autoload or autoload for specific paths only. Here are examples:
+There are two options: always autoload or autoload for specific paths only.
+Here are examples:
 
 ```python
-
 from starlette.middleware import Middleware
 
 from starsessions import CookieStore, SessionAutoloadMiddleware, SessionMiddleware
 
-session_lifetime = 3600 * 24 * 14  # 14 days
 session_store = CookieStore(secret_key='TOP SECRET')
 
-# Autoload session for every request
+# Always autoload
 
 middleware = [
     Middleware(SessionMiddleware, store=session_store),
@@ -122,10 +119,36 @@ middleware = [
 ]
 ```
 
+### Rolling sessions
+
+The default behavior of `SessionMiddleware` is to expire cookie after `lifetime` seconds after it was set.
+For example, if you create a session with `lifetime=3600` then the session will be terminated exactly in 3600 seconds.
+Sometimes this may not be what you need, so we provide alternate expiration strategy - rolling sessions.
+
+When rolling sessions in use, the cookie expiration time will be extended by `lifetime` value on every response.
+Let's see how it works on example. First, on the first response you create a new session with `lifetime=3600`,
+then user does another request and session gets extended by another 3600 seconds and so on.
+This approach is useful when you want to have short-timed sessions but don't want them to interrupt in the middle of
+user's operation. With rolling strategy, session cookie will be expired only after some period of user's inactivity.
+
+To enable rolling strategy set `rolling=True`.
+
+```python
+from starlette.middleware import Middleware
+from starsessions import SessionMiddleware
+
+middleware = [
+    Middleware(SessionMiddleware, lifetime=300, rolling=True),
+]
+```
+
+The snippet above demonstrates an example setup where session will be dropped after 300 seconds (5 minutes) of
+inactivity, but will be automatically extended by another 5 minutes while the user is online.
+
 ### Cookie path
 
-You can pass `cookie_path` argument to bind session cookie to specific URLs. For example, to activate session cookie only
-for admin area (which is hosted under `/admin` path prefix), use `cookie_path="/admin"` middleware argument.
+You can pass `cookie_path` argument to bind session cookie to specific URLs. For example, to activate session cookie
+only for admin area, use `cookie_path="/admin"` middleware argument.
 
 ```python
 from starlette.middleware import Middleware

@@ -40,7 +40,7 @@ def test_loads_existing_session(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await store.write("session_id", b'{"key": "value"}', lifetime=60)
+        await store.write("session_id", b'{"key": "value"}', ttl=60)
         await load_session(connection)
 
         response = JSONResponse(connection.session)
@@ -70,7 +70,7 @@ def test_send_cookie_if_session_updated(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await store.write("session_id", b'{"key2": "value2"}', lifetime=60)
+        await store.write("session_id", b'{"key2": "value2"}', ttl=60)
         await load_session(connection)
 
         connection.session["key"] = "value"
@@ -87,7 +87,7 @@ def test_send_cookie_if_session_destroyed(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await store.write("session_id", b'{"key2": "value2"}', lifetime=60)
+        await store.write("session_id", b'{"key2": "value2"}', ttl=60)
         await load_session(connection)
 
         connection.session.clear()
@@ -106,7 +106,7 @@ async def test_will_clear_storage_if_session_destroyed(store: SessionStore) -> N
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await store.write("session_id", b'{"key2": "value2"}', lifetime=60)
+        await store.write("session_id", b'{"key2": "value2"}', ttl=60)
         await load_session(connection)
 
         connection.session.clear()
@@ -157,7 +157,7 @@ def test_max_age_argument_set_in_cookie(store: SessionStore) -> None:
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, lifetime=-1)
+    app = SessionMiddleware(app, store=store, lifetime=1)
     client = TestClient(app)
     response = client.get("/")
 

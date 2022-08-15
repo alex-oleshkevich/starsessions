@@ -6,6 +6,7 @@ from .session import (
     get_session_handler,
     get_session_id,
     get_session_metadata,
+    get_session_remaining_seconds,
     is_loaded,
     load_session,
     regenerate_session_id,
@@ -30,4 +31,5 @@ __all__ = [
     "is_loaded",
     "load_session",
     "get_session_metadata",
+    "get_session_remaining_seconds",
 ]

@@ -44,7 +44,7 @@ def test_load_should_not_overwrite_created_timestamp(store: SessionStore) -> Non
     metadata = {"created": 42, "last_access": 0, "lifetime": 0}
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
-        await store.write("session_id", json.dumps({"__metadata__": metadata}).encode(), lifetime=60)
+        await store.write("session_id", json.dumps({"__metadata__": metadata}).encode(), ttl=60)
 
         connection = HTTPConnection(scope, receive)
         await load_session(connection)

@@ -5,7 +5,7 @@ from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from starsessions.serializers import JsonSerializer, Serializer
-from starsessions.session import SessionHandler, load_session
+from starsessions.session import SessionHandler, get_session_remaining_seconds, load_session
 from starsessions.stores import SessionStore
 
 
@@ -15,6 +15,7 @@ class SessionMiddleware:
         app: ASGIApp,
         store: SessionStore,
         lifetime: int = 0,  # session-only
+        rolling: bool = False,
         cookie_name: str = "session",
         cookie_same_site: str = "lax",
         cookie_https_only: bool = True,
@@ -22,8 +23,11 @@ class SessionMiddleware:
         cookie_path: typing.Optional[str] = None,
         serializer: typing.Optional[Serializer] = None,
     ) -> None:
+        assert lifetime >= 0, "Session lifetime cannot be less than zero seconds."
+
         self.app = app
         self.store = store
+        self.rolling = rolling
         self.serializer = serializer or JsonSerializer()
         self.cookie_name = cookie_name
         self.lifetime = lifetime
@@ -77,22 +81,37 @@ class SessionMiddleware:
                 await send(message)
                 return
 
+            # calculate cookie/storage expiry seconds based on selected strategy
+            remaining_time = 0
+
+            # if lifetime is zero then don't send max-age at all
+            # this will create session-only cookie
+            if self.lifetime > 0:
+                if self.rolling:
+                    # rolling strategy always extends cookie max-age by lifetime
+                    remaining_time = self.lifetime
+                else:
+                    # non-rolling strategy reuses initial expiration date
+                    remaining_time = get_session_remaining_seconds(connection)
+
             # persist session data
-            session_id = await handler.save()
+            session_id = await handler.save(remaining_time)
 
             headers = MutableHeaders(scope=message)
             header_parts = [
                 f"{self.cookie_name}={session_id}",
                 f"path={path}",
             ]
-            if self.lifetime:
-                header_parts.append(f"Max-Age={self.lifetime}")
+
+            if self.lifetime > 0:  # always send max-age for non-session scoped cookie
+                header_parts.append(f"max-age={remaining_time}")
+
             if self.cookie_domain:
-                header_parts.append(f"Domain={self.cookie_domain}")
+                header_parts.append(f"domain={self.cookie_domain}")
 
             header_parts.append(self.security_flags)
             header_value = "; ".join(header_parts)
-            headers.append("Set-Cookie", header_value)
+            headers.append("set-cookie", header_value)
 
             await send(message)
 

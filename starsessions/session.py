@@ -68,6 +68,13 @@ def get_session_metadata(connection: HTTPConnection) -> SessionMetadata:
     return metadata
 
 
+def get_session_remaining_seconds(connection: HTTPConnection) -> int:
+    """Get total seconds remaining before this session expires."""
+    now = time.time()
+    metadata = get_session_metadata(connection)
+    return int((metadata["created"] + metadata["lifetime"]) - now)
+
+
 class SessionHandler:
     """
     A tool for low level session management.
@@ -117,13 +124,13 @@ class SessionHandler:
 
         self.initially_empty = len(self.connection.session) == 0
 
-    async def save(self) -> str:
+    async def save(self, remaining_time: int) -> str:
         self.connection.session.update({"__metadata__": self.metadata})
 
         self.session_id = await self.store.write(
             session_id=self.session_id or generate_session_id(),
             data=self.serializer.serialize(self.connection.session),
-            lifetime=self.lifetime,
+            ttl=remaining_time,
         )
         return self.session_id
 

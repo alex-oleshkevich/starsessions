@@ -43,12 +43,12 @@ class RedisStore(SessionStore):
             return b""
         return value  # type: ignore
 
-    async def write(self, session_id: str, data: bytes, lifetime: int) -> str:
+    async def write(self, session_id: str, data: bytes, ttl: int) -> str:
         # Redis will fail for session-only cookies, as zero is not a valid expiry value.
         # We cannot know the final session duration so set here something close to reality.
         # FIXME: we want something better here
-        lifetime = max(lifetime, 3600)  # 1h
-        await self._connection.set(self.prefix(session_id), data, ex=lifetime)
+        ttl = max(ttl, 3600)  # 1h
+        await self._connection.set(self.prefix(session_id), data, ex=ttl)
         return session_id
 
     async def remove(self, session_id: str) -> None:
