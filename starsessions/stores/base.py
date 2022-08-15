@@ -1,8 +1,8 @@
 import abc
 
 
-class SessionBackend(abc.ABC):  # pragma: no cover
-    """Base class for session backends."""
+class SessionStore(abc.ABC):  # pragma: no cover
+    """Base class for session storages."""
 
     @abc.abstractmethod
     async def read(self, session_id: str, lifetime: int) -> bytes:

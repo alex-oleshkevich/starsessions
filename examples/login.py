@@ -14,7 +14,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 from starlette.routing import Route
 
-from starsessions import CookieBackend, SessionMiddleware
+from starsessions import CookieStore, SessionMiddleware
 from starsessions.session import regenerate_session_id
 
 
@@ -67,5 +67,5 @@ routes = [
     Route("/logout", endpoint=logout, methods=['POST']),
     Route("/profile", endpoint=profile),
 ]
-middleware = [Middleware(SessionMiddleware, backend=CookieBackend(secret_key="secret"), autoload=True)]
+middleware = [Middleware(SessionMiddleware, backend=CookieStore(secret_key="secret"), autoload=True)]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

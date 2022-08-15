@@ -1,6 +1,6 @@
 import pytest
 
-from starsessions import InMemoryBackend, JsonSerializer
+from starsessions import InMemoryStore, JsonSerializer
 
 
 @pytest.fixture()
@@ -9,5 +9,5 @@ def serializer() -> JsonSerializer:
 
 
 @pytest.fixture()
-def backend() -> InMemoryBackend:
-    return InMemoryBackend()
+def store() -> InMemoryStore:
+    return InMemoryStore()

@@ -37,7 +37,7 @@ from starlette.middleware import Middleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from starsessions import CookieBackend, load_session, SessionMiddleware
+from starsessions import CookieStore, load_session, SessionMiddleware
 
 
 async def index_view(request):
@@ -48,7 +48,7 @@ async def index_view(request):
 
 
 session_lifetime = 3600 * 24 * 14  # 14 days
-session_store = CookieBackend(secret_key='TOP SECRET')
+session_store = CookieStore(secret_key='TOP SECRET')
 
 app = Starlette(
     middleware=[
@@ -69,9 +69,9 @@ The cookie lifetime is limited to session and only HTTPS protocol allowed. You c
 ```python
 from starlette.middleware import Middleware
 
-from starsessions import CookieBackend, SessionMiddleware
+from starsessions import CookieStore, SessionMiddleware
 
-session_store = CookieBackend(secret_key='TOP SECRET')
+session_store = CookieStore(secret_key='TOP SECRET')
 
 middleware = [
     Middleware(SessionMiddleware, backend=session_store, https_only=False, max_age=3600 * 24 * 14),
@@ -92,10 +92,10 @@ You have to options: always autoload or autoload for specific paths only. Here a
 
 from starlette.middleware import Middleware
 
-from starsessions import CookieBackend, SessionAutoloadMiddleware, SessionMiddleware
+from starsessions import CookieStore, SessionAutoloadMiddleware, SessionMiddleware
 
 session_lifetime = 3600 * 24 * 14  # 14 days
-session_store = CookieBackend(secret_key='TOP SECRET')
+session_store = CookieStore(secret_key='TOP SECRET')
 
 # Autoload session for every request
 
@@ -195,13 +195,13 @@ Stores session data in a Redis server. The backend accepts either connection URL
 ```python
 import aioredis
 
-from starsessions.backends.redis import RedisBackend
+from starsessions.stores.redis import RedisStore
 
-backend = RedisBackend('redis://localhost')
+backend = RedisStore('redis://localhost')
 # or
 redis = aioredis.from_url('redis://localhost')
 
-backend = RedisBackend(connection=redis)
+backend = RedisStore(connection=redis)
 ```
 
 #### Redis key expiry
@@ -223,12 +223,12 @@ returns session ID as a string value.
 ```python
 from typing import Dict
 
-from starsessions import SessionBackend
+from starsessions import SessionStore
 
 
 # instance of class which manages session persistence
 
-class InMemoryBackend(SessionBackend):
+class InMemoryBackend(SessionStore):
     def __init__(self):
         self._storage = {}
 

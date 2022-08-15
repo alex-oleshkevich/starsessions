@@ -1,4 +1,3 @@
-from .backends import CookieBackend, InMemoryBackend, SessionBackend
 from .exceptions import ImproperlyConfigured, SessionError, SessionNotLoaded
 from .middleware import SessionAutoloadMiddleware, SessionMiddleware
 from .serializers import JsonSerializer, Serializer
@@ -10,15 +9,16 @@ from .session import (
     load_session,
     regenerate_session_id,
 )
+from .stores import CookieStore, InMemoryStore, SessionStore
 
 __all__ = [
     "SessionMiddleware",
     "SessionAutoloadMiddleware",
     "Serializer",
     "JsonSerializer",
-    "SessionBackend",
-    "InMemoryBackend",
-    "CookieBackend",
+    "SessionStore",
+    "InMemoryStore",
+    "CookieStore",
     "SessionError",
     "SessionNotLoaded",
     "ImproperlyConfigured",

@@ -5,9 +5,9 @@ import time
 import typing
 from starlette.requests import HTTPConnection
 
-from starsessions.backends import SessionBackend
 from starsessions.exceptions import SessionNotLoaded
 from starsessions.serializers import Serializer
+from starsessions.stores import SessionStore
 from starsessions.types import SessionMetadata
 
 
@@ -79,13 +79,13 @@ class SessionHandler:
         self,
         connection: HTTPConnection,
         session_id: typing.Optional[str],
-        backend: SessionBackend,
+        store: SessionStore,
         serializer: Serializer,
         lifetime: int,
     ) -> None:
         self.connection = connection
         self.session_id = session_id
-        self.backend = backend
+        self.store = store
         self.serializer = serializer
         self.is_loaded = False
         self.initially_empty = False
@@ -100,7 +100,7 @@ class SessionHandler:
         data = {}
         if self.session_id:
             data = self.serializer.deserialize(
-                await self.backend.read(
+                await self.store.read(
                     session_id=self.session_id,
                     lifetime=self.lifetime,
                 ),
@@ -120,12 +120,17 @@ class SessionHandler:
     async def save(self) -> str:
         self.connection.session.update({'__metadata__': self.metadata})
 
-        self.session_id = await self.backend.write(
+        self.session_id = await self.store.write(
             session_id=self.session_id or generate_session_id(),
             data=self.serializer.serialize(self.connection.session),
             lifetime=self.lifetime,
         )
         return self.session_id
+
+    async def destroy(self) -> None:
+        """Destroy session."""
+        if self.session_id:
+            await self.store.remove(self.session_id)
 
     @property
     def is_empty(self) -> bool:

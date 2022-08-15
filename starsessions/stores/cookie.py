@@ -3,10 +3,10 @@ from base64 import b64decode, b64encode
 from itsdangerous import BadSignature, TimestampSigner
 from starlette.datastructures import Secret
 
-from starsessions.backends.base import SessionBackend
+from starsessions.stores.base import SessionStore
 
 
-class CookieBackend(SessionBackend):
+class CookieStore(SessionStore):
     """Stores session data in the browser's cookie as a signed string."""
 
     def __init__(self, secret_key: typing.Union[str, Secret]):
@@ -21,7 +21,7 @@ class CookieBackend(SessionBackend):
             return b''
 
     async def write(self, session_id: str, data: bytes, lifetime: int) -> str:
-        """The data is a session id in this backend."""
+        """The data is a session id in this storage."""
         encoded_data = b64encode(data)
         return self._signer.sign(encoded_data).decode("utf-8")
 

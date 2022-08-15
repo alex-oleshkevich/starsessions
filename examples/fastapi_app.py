@@ -16,10 +16,10 @@ from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from starsessions import CookieBackend, SessionMiddleware
+from starsessions import CookieStore, SessionMiddleware
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, backend=CookieBackend(secret_key='key'), autoload=True)
+app.add_middleware(SessionMiddleware, backend=CookieStore(secret_key='key'), autoload=True)
 
 
 @app.get('/', response_class=JSONResponse)

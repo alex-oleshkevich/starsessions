@@ -1,9 +1,9 @@
 import typing
 
-from starsessions.backends.base import SessionBackend
+from starsessions.stores.base import SessionStore
 
 
-class InMemoryBackend(SessionBackend):
+class InMemoryStore(SessionStore):
     """Stores session data in a dictionary."""
 
     def __init__(self) -> None:

@@ -21,7 +21,7 @@ from starlette.responses import HTMLResponse, RedirectResponse
 from starlette.routing import Route
 
 from starsessions import SessionAutoloadMiddleware, SessionMiddleware
-from starsessions.backends.redis import RedisBackend
+from starsessions.stores.redis import RedisStore
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
@@ -58,7 +58,7 @@ routes = [
     Route("/clean", endpoint=clean),
 ]
 middleware = [
-    Middleware(SessionMiddleware, backend=RedisBackend(REDIS_URL)),
+    Middleware(SessionMiddleware, backend=RedisStore(REDIS_URL)),
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)
