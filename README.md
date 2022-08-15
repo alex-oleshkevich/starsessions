@@ -252,7 +252,16 @@ store = RedisStore(url='redis://localhost', prefix=make_prefix)
 
 #### Key expiration
 
-The library automatically manages key expiration
+The library automatically manages key expiration, usually you have nothing to do with it.
+But for cases when `lifetime=0` we don't know when the session will over, and we have to heuristically calculate TTL
+otherwise the data will remain in Redis forever. At this moment, we just set 30 days TTL. You can change it by
+setting `gc_ttl` value on the store.
+
+```python
+from starsessions.stores.redis import RedisStore
+
+store = RedisStore(url='redis://localhost', gc_ttl=3600)  # max 1 hour
+```
 
 ## Custom store
 
@@ -278,7 +287,7 @@ class InMemoryStore(SessionStore):
         """ Read session data from a data source using session_id. """
         return self._storage.get(session_id, {})
 
-    async def write(self, session_id: str, data: Dict, lifetime: int) -> str:
+    async def write(self, session_id: str, data: Dict, lifetime: int, ttl: int) -> str:
         """ Write session data into data source and return session id. """
         self._storage[session_id] = data
         return session_id
@@ -291,14 +300,43 @@ class InMemoryStore(SessionStore):
         return session_id in self._storage
 ```
 
+### lifetime and ttl
+
+The `write` accepts two special arguments: `lifetime` and `ttl`.
+The difference between then is that `lifetime` is a value of `lifetime` argument of the middleware
+and `ttl` tells after how many seconds the data can be deleted from the storage.
+
+Your custom backend has to correctly handle setups when `lifetime = 0`.
+In such cases you don't have exact expiration value, and you have to find a way how to extend session TTL at the storage
+side, if any.
+
 ## Serializers
 
-Sometimes you cannot pass raw session data to the store. The data must be serialized into something the store can
-handle.
+The library automatically serializes session data to string using JSON.
+By default, we use `starsessions.JsonSerializer` but you can implement your own by extending `starsessions.Serializer`
+class.
 
-Some stores (like `RedisStore`) optionally accept `serializer` argument that will be used to serialize and
-deserialize session data. By default, we provide (and use) `starsessions.JsonSerializer` but you can implement your own
-by extending `starsessions.Serializer` class.
+```python
+import json
+import typing
+
+from starlette.middleware import Middleware
+
+from starsessions import Serializer, SessionMiddleware
+
+
+class MySerializer(Serializer):
+    def serialize(self, data: typing.Any) -> bytes:
+        return json.dumps(data).encode('utf-8')
+
+    def deserialize(self, data: bytes) -> typing.Dict[str, typing.Any]:
+        return json.loads(data)
+
+
+middleware = [
+    Middleware(SessionMiddleware, serializer=MySerializer()),
+]
+```
 
 ## Session termination
 
