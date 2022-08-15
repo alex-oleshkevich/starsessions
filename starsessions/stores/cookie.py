@@ -27,7 +27,7 @@ class CookieStore(SessionStore):
         except BadSignature:
             return b""
 
-    async def write(self, session_id: str, data: bytes, ttl: int) -> str:
+    async def write(self, session_id: str, data: bytes, lifetime: int, ttl: int) -> str:
         """The data is a session id in this storage."""
         encoded_data = b64encode(data)
         return self._signer.sign(encoded_data).decode("utf-8")

@@ -210,10 +210,10 @@ Stores session data in a signed cookie on the client.
 
 Class: `starsessions.stores.redis.RedisStore`
 
+Stores session data in a Redis server. The store accepts either connection URL or an instance of `aioredis.Redis`.
+
 > Requires [aioredis](https://aioredis.readthedocs.io/en/latest/getting-started/),
 > use `pip install starsessions[redis]` or `poetry add starsessions[redis]`
-
-Stores session data in a Redis server. The store accepts either connection URL or an instance of `aioredis.Redis`.
 
 ```python
 import aioredis
@@ -227,13 +227,32 @@ redis = aioredis.from_url('redis://localhost')
 store = RedisStore(connection=redis)
 ```
 
-#### Redis key expiry
+#### Redis key prefix
 
-The store will use `lifetime` to set key expiration TTL.
+By default, all keys in Redis prefixed with `starsessions_`. If you want to change this use `prefix` argument.
 
-It's important to note that on every session write, the Redis expiry resets.
-For example, if you set the Redis expire time for 10 seconds, and you perform another write to the session
-in those 10 seconds, the expiry will be extended by 10 seconds.
+```python
+from starsessions.stores.redis import RedisStore
+
+store = RedisStore(url='redis://localhost', prefix='my_sessions')
+```
+
+Prefix can be a callable:
+
+```python
+from starsessions.stores.redis import RedisStore
+
+
+def make_prefix(key: str) -> str:
+    return 'my_sessions_' + key
+
+
+store = RedisStore(url='redis://localhost', prefix=make_prefix)
+```
+
+#### Key expiration
+
+The library automatically manages key expiration
 
 ## Custom store
 

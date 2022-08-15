@@ -58,7 +58,7 @@ async def test_load_session(store: SessionStore, serializer: Serializer) -> None
     connection.scope["session"] = {}
     connection.scope["session_handler"] = SessionHandler(connection, base_session_id, store, serializer, lifetime=60)
 
-    await store.write("session_id", b'{"key": "value"}', ttl=60)
+    await store.write("session_id", b'{"key": "value"}', lifetime=60, ttl=60)
     await load_session(connection)
     assert is_loaded(connection)
     assert connection.session == {"key": "value"}

@@ -17,16 +17,18 @@ class RedisStore(SessionStore):
         self,
         url: typing.Optional[str] = None,
         connection: typing.Optional[aioredis.Redis] = None,
-        prefix: typing.Union[typing.Callable[[str], str], str] = "",
+        prefix: typing.Union[typing.Callable[[str], str], str] = "starsessions.",
+        gc_ttl: int = 3600 * 24 * 30,
     ) -> None:
         """
-        Initializes redis session store. Either `url` or `connection` required. To namespace keys in Redis use `prefix`
+        Initializes Redis session store. Either `url` or `connection` required. To namespace keys in Redis use `prefix`
         argument. It can be a string or callable that accepts a single string argument and returns new Redis key as
         string.
 
         :param url:  Redis URL. Defaults to None.
         :param connection: aioredis connection. Defaults to None
         :param prefix: Redis key name prefix or factory.
+        :param gc_ttl: TTL for sessions that have no expiration time
         """
         if not (url or connection):
             raise ImproperlyConfigured("Either 'url' or 'connection' arguments must be provided.")
@@ -34,6 +36,7 @@ class RedisStore(SessionStore):
         if isinstance(prefix, str):
             prefix = functools.partial(prefix_factory, prefix)
 
+        self.gc_ttl = gc_ttl
         self.prefix: typing.Callable[[str], str] = prefix
         self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
 
@@ -43,11 +46,14 @@ class RedisStore(SessionStore):
             return b""
         return value  # type: ignore
 
-    async def write(self, session_id: str, data: bytes, ttl: int) -> str:
-        # Redis will fail for session-only cookies, as zero is not a valid expiry value.
-        # We cannot know the final session duration so set here something close to reality.
-        # FIXME: we want something better here
-        ttl = max(ttl, 3600)  # 1h
+    async def write(self, session_id: str, data: bytes, lifetime: int, ttl: int) -> str:
+        if lifetime == 0:
+            # Redis will fail for session-only cookies, as zero is not a valid expiry value.
+            # We cannot know the final session duration so set here something close to reality.
+            # FIXME: we want something better here
+            ttl = self.gc_ttl
+
+        ttl = max(1, ttl)
         await self._connection.set(self.prefix(session_id), data, ex=ttl)
         return session_id
 

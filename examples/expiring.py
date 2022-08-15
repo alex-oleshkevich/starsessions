@@ -1,10 +1,10 @@
 """
-This examples demonstrates base usage of this library. A CookieStore is used.
+This example demonstrates base usage of this library. The session will expire in 10 seconds after creation.
 
 Usage:
-> uvicorn examples.app:app
+> uvicorn examples.expiring:app
 
-Open http://localhost:8000 for management panel.
+Open http://localhost:8000 for demo page.
 """
 import datetime
 import json

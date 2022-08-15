@@ -1,5 +1,5 @@
 """
-This examples demonstrates redis store usage.
+This example demonstrates Redis store usage.
 
 You can change Redis connection by specifying REDIS_URL environment variable.
 
@@ -58,7 +58,7 @@ routes = [
     Route("/clean", endpoint=clean),
 ]
 middleware = [
-    Middleware(SessionMiddleware, store=RedisStore(REDIS_URL)),
+    Middleware(SessionMiddleware, store=RedisStore(REDIS_URL), lifetime=10, rolling=True),
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

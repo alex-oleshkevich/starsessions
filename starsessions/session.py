@@ -130,6 +130,7 @@ class SessionHandler:
         self.session_id = await self.store.write(
             session_id=self.session_id or generate_session_id(),
             data=self.serializer.serialize(self.connection.session),
+            lifetime=self.lifetime,
             ttl=remaining_time,
         )
         return self.session_id

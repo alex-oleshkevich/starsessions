@@ -12,7 +12,7 @@ from starsessions import SessionMiddleware, SessionStore, load_session
 @pytest.mark.asyncio
 async def test_expiring_session_must_not_extend_duration(store: SessionStore) -> None:
     session_lifetime = 10
-    await store.write("session_id", b'{"id": 42}', ttl=session_lifetime)
+    await store.write("session_id", b'{"id": 42}', lifetime=60, ttl=session_lifetime)
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)

@@ -16,14 +16,17 @@ class SessionStore(abc.ABC):  # pragma: no cover
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write(self, session_id: str, data: bytes, ttl: int) -> str:
+    async def write(self, session_id: str, data: bytes, lifetime: int, ttl: int) -> str:
         """
         Write session data to the storage.
 
         Must return session ID. Either new or from arguments.
+        The difference between `lifetime` and `ttl` is that former defines the total session duration
+        and the latter ony tells the amount to seconds left before the data can be safely removed.
 
         :param session_id: ID associated with session
         :param data: session data serialized to bytes
+        :param lifetime: session lifetime, in seconds
         :param ttl: keep session data this amount of time, in seconds
         :returns str: session ID
         """

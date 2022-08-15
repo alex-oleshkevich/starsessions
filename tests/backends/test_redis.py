@@ -19,26 +19,26 @@ def redis_store(request: SubRequest) -> SessionStore:
 
 @pytest.mark.asyncio
 async def test_redis_read_write(redis_store: SessionStore) -> None:
-    new_id = await redis_store.write("session_id", b"data", ttl=60)
+    new_id = await redis_store.write("session_id", b"data", lifetime=60, ttl=60)
     assert new_id == "session_id"
     assert await redis_store.read("session_id", lifetime=60) == b"data"
 
 
 @pytest.mark.asyncio
 async def test_redis_write_with_session_only_setup(redis_store: SessionStore) -> None:
-    await redis_store.write("session_id", b"data", ttl=0)
+    await redis_store.write("session_id", b"data", lifetime=0, ttl=0)
 
 
 @pytest.mark.asyncio
 async def test_redis_remove(redis_store: SessionStore) -> None:
-    await redis_store.write("session_id", b"data", ttl=60)
+    await redis_store.write("session_id", b"data", lifetime=60, ttl=60)
     await redis_store.remove("session_id")
     assert await redis_store.exists("session_id") is False
 
 
 @pytest.mark.asyncio
 async def test_redis_exists(redis_store: SessionStore) -> None:
-    await redis_store.write("session_id", b"data", ttl=60)
+    await redis_store.write("session_id", b"data", lifetime=60, ttl=60)
     assert await redis_store.exists("session_id") is True
     assert await redis_store.exists("other id") is False
 

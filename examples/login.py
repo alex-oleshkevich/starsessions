@@ -1,12 +1,12 @@
 """
-This examples demonstrates base usage of this library. A CookieStore is used.
+This example demonstrates a simple login/logout flow.
 
 Required dependencies: python-multipart
 
 Usage:
 > uvicorn examples.login:app
 
-Access http://localhost:8000/ to see a landing page
+Open http://localhost:8000 for demo page.
 """
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -68,7 +68,7 @@ routes = [
     Route("/profile", endpoint=profile),
 ]
 middleware = [
-    Middleware(SessionMiddleware, store=CookieStore(secret_key="secret")),
+    Middleware(SessionMiddleware, store=CookieStore(secret_key="secret"), cookie_https_only=False),
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)
