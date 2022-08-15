@@ -1,8 +1,13 @@
 import aioredis
+import functools
 import typing
 
 from starsessions.backends.base import SessionBackend
 from starsessions.exceptions import ImproperlyConfigured
+
+
+def prefix_factory(prefix: str, key: str) -> str:
+    return prefix + key
 
 
 class RedisBackend(SessionBackend):
@@ -12,34 +17,28 @@ class RedisBackend(SessionBackend):
         self,
         url: typing.Optional[str] = None,
         connection: typing.Optional[aioredis.Redis] = None,
-        redis_key_func: typing.Optional[typing.Callable[[str], str]] = None,
+        prefix: typing.Union[typing.Callable[[str], str], str] = '',
     ) -> None:
         """
-        Initializes redis session backend.
+        Initializes redis session backend. Either `url` or `connection` required. To namespace keys in Redis use
+        `prefix` argument. It can be a string or callable that accepts a single string argument and returns new Redis
+        key as string.
 
-        Args:
-            url (str, optional): Redis URL. Defaults to None.
-            connection (aioredis.Redis, optional): aioredis connection. Defaults to None.
-            redis_key_func (typing.Callable[[str], str], optional): Customize redis key name. Defaults to None.
+        :param url:  Redis URL. Defaults to None.
+        :param connection: aioredis connection. Defaults to None
+        :param prefix: Redis key name prefix or factory.
         """
         if not (url or connection):
             raise ImproperlyConfigured("Either 'url' or 'connection' arguments must be provided.")
 
+        if isinstance(prefix, str):
+            prefix = functools.partial(prefix_factory, prefix)
+
+        self.prefix: typing.Callable[[str], str] = prefix
         self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
 
-        if redis_key_func and not callable(redis_key_func):
-            raise ImproperlyConfigured("The redis_key_func needs to be a callable that takes a single string argument.")
-
-        self._redis_key_func = redis_key_func
-
-    def get_redis_key(self, session_id: str) -> str:
-        if self._redis_key_func:
-            return self._redis_key_func(session_id)
-        else:
-            return session_id
-
     async def read(self, session_id: str, lifetime: int) -> bytes:
-        value = await self._connection.get(self.get_redis_key(session_id))
+        value = await self._connection.get(self.prefix(session_id))
         if value is None:
             return b''
         return value  # type: ignore
@@ -49,12 +48,12 @@ class RedisBackend(SessionBackend):
         # We cannot know the final session duration so set here something close to reality.
         # FIXME: we want something better here
         lifetime = max(lifetime, 3600)  # 1h
-        await self._connection.set(self.get_redis_key(session_id), data, ex=lifetime)
+        await self._connection.set(self.prefix(session_id), data, ex=lifetime)
         return session_id
 
     async def remove(self, session_id: str) -> None:
-        await self._connection.delete(self.get_redis_key(session_id))
+        await self._connection.delete(self.prefix(session_id))
 
     async def exists(self, session_id: str) -> bool:
-        result: int = await self._connection.exists(self.get_redis_key(session_id))
+        result: int = await self._connection.exists(self.prefix(session_id))
         return result > 0

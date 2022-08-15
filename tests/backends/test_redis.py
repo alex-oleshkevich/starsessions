@@ -10,11 +10,11 @@ def redis_key_callable(session_id: str) -> str:
     return f"this:is:a:redis:key:{session_id}"
 
 
-@pytest.fixture(params=[None, redis_key_callable], ids=["default", "using redis_key_callable"])
+@pytest.fixture(params=['prefix_', redis_key_callable], ids=["using string", "using redis_key_callable"])
 def redis_backend(request: SubRequest) -> SessionBackend:
     redis_key = request.param
     url = os.environ.get("REDIS_URL", "redis://localhost")
-    return RedisBackend(url, redis_key_func=redis_key)
+    return RedisBackend(url, prefix=redis_key)
 
 
 @pytest.mark.asyncio
@@ -46,8 +46,3 @@ async def test_redis_exists(redis_backend: SessionBackend) -> None:
 @pytest.mark.asyncio
 async def test_redis_empty_session(redis_backend: SessionBackend) -> None:
     assert await redis_backend.read("unknown_session_id", lifetime=60) == b''
-
-
-def test_improperly_configured_redis_key() -> None:
-    with pytest.raises(Exception):
-        RedisBackend(redis_key_func="a_random_string")  # type: ignore[arg-type]
