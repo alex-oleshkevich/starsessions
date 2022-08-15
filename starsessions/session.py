@@ -13,7 +13,7 @@ from starsessions.types import SessionMetadata
 
 def generate_session_id() -> str:
     """Generate a new, cryptographically strong session ID."""
-    return secrets.token_hex(128)
+    return secrets.token_hex(16)
 
 
 def regenerate_session_id(connection: HTTPConnection) -> str:
@@ -55,6 +55,11 @@ def is_loaded(connection: HTTPConnection) -> bool:
 
 
 def get_session_metadata(connection: HTTPConnection) -> SessionMetadata:
+    """
+    Get session metadata. The session must be loaded first otherwise it raises.
+
+    :raise SessionNotLoaded: if session is not loaded.
+    """
     if not is_loaded(connection):
         raise SessionNotLoaded('Cannot read session metadata because session was not loaded.')
 

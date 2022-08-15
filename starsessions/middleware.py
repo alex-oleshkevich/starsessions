@@ -15,9 +15,9 @@ class SessionMiddleware:
         app: ASGIApp,
         backend: SessionBackend,
         session_cookie: str = "session",
-        max_age: int = 14 * 24 * 60 * 60,  # 14 days, in seconds
+        max_age: int = 0,  # session-only
         same_site: str = "lax",
-        https_only: bool = False,
+        https_only: bool = True,
         domain: typing.Optional[str] = None,
         path: typing.Optional[str] = None,
         serializer: typing.Optional[Serializer] = None,

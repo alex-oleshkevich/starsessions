@@ -45,6 +45,10 @@ class RedisBackend(SessionBackend):
         return value  # type: ignore
 
     async def write(self, session_id: str, data: bytes, lifetime: int) -> str:
+        # Redis will fail for session-only cookies, as zero is not a valid expiry value.
+        # We cannot know the final session duration so set here something close to reality.
+        # FIXME: we want something better here
+        lifetime = max(lifetime, 3600)  # 1h
         await self._connection.set(self.get_redis_key(session_id), data, ex=lifetime)
         return session_id
 
