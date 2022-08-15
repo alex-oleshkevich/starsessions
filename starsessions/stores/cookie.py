@@ -15,6 +15,13 @@ class CookieStore(SessionStore):
     async def read(self, session_id: str, lifetime: int) -> bytes:
         """A session_id is a signed session value."""
         try:
+            if lifetime == 0:
+                # For session-only cookies, the lifetime parameter has no sense
+                # as the cookie will be deleted when browser closes.
+                # but unsigning will always fail because the signature will always be expired.
+                # So fake lifetime just for TimestampSigner success.
+                # If you have a better solution please file an issue.
+                lifetime = 3600 * 24 * 30 * 12  # 1 year
             data = self._signer.unsign(session_id, max_age=lifetime)
             return b64decode(data)
         except BadSignature:

@@ -14,23 +14,23 @@ class SessionMiddleware:
         self,
         app: ASGIApp,
         store: SessionStore,
-        session_cookie: str = "session",
-        max_age: int = 0,  # session-only
-        same_site: str = "lax",
-        https_only: bool = True,
-        domain: typing.Optional[str] = None,
-        path: typing.Optional[str] = None,
+        lifetime: int = 0,  # session-only
+        cookie_name: str = "session",
+        cookie_same_site: str = "lax",
+        cookie_https_only: bool = True,
+        cookie_domain: typing.Optional[str] = None,
+        cookie_path: typing.Optional[str] = None,
         serializer: typing.Optional[Serializer] = None,
     ) -> None:
         self.app = app
         self.store = store
         self.serializer = serializer or JsonSerializer()
-        self.session_cookie = session_cookie
-        self.max_age = max_age
-        self.domain = domain
-        self.path = path
-        self.security_flags = "httponly; samesite=" + same_site
-        if https_only:  # Secure flag can be used with HTTPS only
+        self.cookie_name = cookie_name
+        self.lifetime = lifetime
+        self.cookie_domain = cookie_domain
+        self.cookie_path = cookie_path
+        self.security_flags = "httponly; samesite=" + cookie_same_site
+        if cookie_https_only:  # Secure flag can be used with HTTPS only
             self.security_flags += "; secure"
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -39,8 +39,8 @@ class SessionMiddleware:
             return
 
         connection = HTTPConnection(scope)
-        session_id = connection.cookies.get(self.session_cookie)
-        handler = SessionHandler(connection, session_id, self.store, self.serializer, self.max_age)
+        session_id = connection.cookies.get(self.cookie_name)
+        handler = SessionHandler(connection, session_id, self.store, self.serializer, self.lifetime)
 
         scope["session"] = {}
         scope["session_handler"] = handler
@@ -55,7 +55,7 @@ class SessionMiddleware:
                 return
 
             nonlocal session_id
-            path = self.path or scope.get("root_path", "") or "/"
+            path = self.cookie_path or scope.get("root_path", "") or "/"
 
             if handler.is_empty:
                 # if session was initially empty then do nothing
@@ -65,10 +65,10 @@ class SessionMiddleware:
 
                 # session data loaded but empty, no matter whether it was initially empty or cleared
                 # we have to remove the cookie and clear the storage
-                if not self.path or self.path and scope["path"].startswith(self.path):
+                if not self.cookie_path or self.cookie_path and scope["path"].startswith(self.cookie_path):
                     headers = MutableHeaders(scope=message)
                     header_value = "{}={}; {}".format(
-                        self.session_cookie,
+                        self.cookie_name,
                         f"null; path={path}; expires=Thu, 01 Jan 1970 00:00:00 GMT;",
                         self.security_flags,
                     )
@@ -82,13 +82,13 @@ class SessionMiddleware:
 
             headers = MutableHeaders(scope=message)
             header_parts = [
-                f"{self.session_cookie}={session_id}",
+                f"{self.cookie_name}={session_id}",
                 f"path={path}",
             ]
-            if self.max_age:
-                header_parts.append(f"Max-Age={self.max_age}")
-            if self.domain:
-                header_parts.append(f"Domain={self.domain}")
+            if self.lifetime:
+                header_parts.append(f"Max-Age={self.lifetime}")
+            if self.cookie_domain:
+                header_parts.append(f"Domain={self.cookie_domain}")
 
             header_parts.append(self.security_flags)
             header_value = "; ".join(header_parts)

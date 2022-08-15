@@ -157,7 +157,7 @@ def test_max_age_argument_set_in_cookie(store: SessionStore) -> None:
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, max_age=-1)
+    app = SessionMiddleware(app, store=store, lifetime=-1)
     client = TestClient(app)
     response = client.get("/")
 
@@ -174,7 +174,7 @@ def test_same_site_argument_set_in_cookie(store: SessionStore) -> None:
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, same_site="none")
+    app = SessionMiddleware(app, store=store, cookie_same_site="none")
     client = TestClient(app)
     response = client.get("/")
 
@@ -190,7 +190,7 @@ def test_path_argument_set_in_cookie(store: SessionStore) -> None:
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, path="/admin")
+    app = SessionMiddleware(app, store=store, cookie_path="/admin")
     client = TestClient(app)
     response = client.get("/")
 
@@ -206,7 +206,7 @@ def test_domain_argument_set_in_cookie(store: SessionStore) -> None:
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, domain="example.com")
+    app = SessionMiddleware(app, store=store, cookie_domain="example.com")
     client = TestClient(app)
     response = client.get("/")
 
@@ -222,7 +222,7 @@ def test_set_secure_cookie(store: SessionStore) -> None:
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, https_only=True)
+    app = SessionMiddleware(app, store=store, cookie_https_only=True)
     client = TestClient(app)
     response = client.get("/")
 
@@ -244,7 +244,7 @@ def test_session_only_cookies(store: SessionStore) -> None:
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, max_age=0)
+    app = SessionMiddleware(app, store=store, lifetime=0)
     client = TestClient(app)
     response = client.get("/")
     assert "max-age" not in response.headers["set-cookie"].lower()

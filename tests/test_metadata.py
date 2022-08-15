@@ -30,7 +30,7 @@ def test_load_should_create_new_metadata(store: SessionStore) -> None:
         response = JSONResponse(get_session_metadata(connection))
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, max_age=1209600)
+    app = SessionMiddleware(app, store=store, lifetime=1209600)
     client = TestClient(app)
     with mock.patch("time.time", lambda: 1660556520):
         assert client.get("/", cookies={"session": "session_id"}).json() == {
@@ -52,7 +52,7 @@ def test_load_should_not_overwrite_created_timestamp(store: SessionStore) -> Non
         response = JSONResponse(get_session_metadata(connection))
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, max_age=1209600)
+    app = SessionMiddleware(app, store=store, lifetime=1209600)
     client = TestClient(app)
     with mock.patch("time.time", lambda: 1660556520):
         assert client.get("/", cookies={"session": "session_id"}).json() == {
@@ -72,7 +72,7 @@ def test_should_update_last_access_time_on_load(store: SessionStore) -> None:
         response = JSONResponse(get_session_metadata(connection))
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, max_age=1209600)
+    app = SessionMiddleware(app, store=store, lifetime=1209600)
     client = TestClient(app)
     with mock.patch("time.time", lambda: 1660556520):
         assert client.get("/", cookies={"session": "session_id"}).json() == {

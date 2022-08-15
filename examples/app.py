@@ -46,7 +46,7 @@ routes = [
     Route("/clean", endpoint=clean),
 ]
 middleware = [
-    Middleware(SessionMiddleware, store=CookieStore(secret_key="key")),
+    Middleware(SessionMiddleware, store=CookieStore(secret_key="key"), cookie_https_only=False),
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)
