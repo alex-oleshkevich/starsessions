@@ -4,16 +4,16 @@ from starlette.datastructures import MutableHeaders
 from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from starsessions.backends import SessionBackend
 from starsessions.serializers import JsonSerializer, Serializer
 from starsessions.session import SessionHandler, load_session
+from starsessions.stores import SessionStore
 
 
 class SessionMiddleware:
     def __init__(
         self,
         app: ASGIApp,
-        backend: SessionBackend,
+        store: SessionStore,
         session_cookie: str = "session",
         max_age: int = 0,  # session-only
         same_site: str = "lax",
@@ -23,7 +23,7 @@ class SessionMiddleware:
         serializer: typing.Optional[Serializer] = None,
     ) -> None:
         self.app = app
-        self.backend = backend
+        self.store = store
         self.serializer = serializer or JsonSerializer()
         self.session_cookie = session_cookie
         self.max_age = max_age
@@ -40,7 +40,7 @@ class SessionMiddleware:
 
         connection = HTTPConnection(scope)
         session_id = connection.cookies.get(self.session_cookie)
-        handler = SessionHandler(connection, session_id, self.backend, self.serializer, self.max_age)
+        handler = SessionHandler(connection, session_id, self.store, self.serializer, self.max_age)
 
         scope["session"] = {}
         scope["session_handler"] = handler
@@ -73,8 +73,7 @@ class SessionMiddleware:
                         self.security_flags,
                     )
                     headers.append("Set-Cookie", header_value)
-                    if handler.session_id:
-                        await self.backend.remove(handler.session_id)
+                    await handler.destroy()
                 await send(message)
                 return
 

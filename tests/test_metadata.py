@@ -6,23 +6,23 @@ from starlette.testclient import TestClient
 from starlette.types import Receive, Scope, Send
 from unittest import mock
 
-from starsessions import SessionBackend, SessionMiddleware, SessionNotLoaded
+from starsessions import SessionMiddleware, SessionNotLoaded, SessionStore
 from starsessions.session import get_session_metadata, load_session
 
 
-def test_requires_loaded_session(backend: SessionBackend) -> None:
+def test_requires_loaded_session(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         response = JSONResponse(get_session_metadata(connection))
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, backend=backend)
+    app = SessionMiddleware(app, store=store)
     client = TestClient(app)
     with pytest.raises(SessionNotLoaded, match='Cannot read session metadata because session was not loaded.'):
         assert client.get('/').json() == {}
 
 
-def test_load_should_create_new_metadata(backend: SessionBackend) -> None:
+def test_load_should_create_new_metadata(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
@@ -30,7 +30,7 @@ def test_load_should_create_new_metadata(backend: SessionBackend) -> None:
         response = JSONResponse(get_session_metadata(connection))
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, backend=backend, max_age=1209600)
+    app = SessionMiddleware(app, store=store, max_age=1209600)
     client = TestClient(app)
     with mock.patch('time.time', lambda: 1660556520):
         assert client.get('/', cookies={'session': 'session_id'}).json() == {
@@ -40,11 +40,11 @@ def test_load_should_create_new_metadata(backend: SessionBackend) -> None:
         }
 
 
-def test_load_should_not_overwrite_created_timestamp(backend: SessionBackend) -> None:
+def test_load_should_not_overwrite_created_timestamp(store: SessionStore) -> None:
     metadata = {"created": 42, "last_access": 0, "lifetime": 0}
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
-        await backend.write('session_id', json.dumps({'__metadata__': metadata}).encode(), lifetime=60)
+        await store.write('session_id', json.dumps({'__metadata__': metadata}).encode(), lifetime=60)
 
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
@@ -52,7 +52,7 @@ def test_load_should_not_overwrite_created_timestamp(backend: SessionBackend) ->
         response = JSONResponse(get_session_metadata(connection))
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, backend=backend, max_age=1209600)
+    app = SessionMiddleware(app, store=store, max_age=1209600)
     client = TestClient(app)
     with mock.patch('time.time', lambda: 1660556520):
         assert client.get('/', cookies={'session': 'session_id'}).json() == {
@@ -62,7 +62,7 @@ def test_load_should_not_overwrite_created_timestamp(backend: SessionBackend) ->
         }
 
 
-def test_should_update_last_access_time_on_load(backend: SessionBackend) -> None:
+def test_should_update_last_access_time_on_load(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
@@ -72,7 +72,7 @@ def test_should_update_last_access_time_on_load(backend: SessionBackend) -> None
         response = JSONResponse(get_session_metadata(connection))
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, backend=backend, max_age=1209600)
+    app = SessionMiddleware(app, store=store, max_age=1209600)
     client = TestClient(app)
     with mock.patch('time.time', lambda: 1660556520):
         assert client.get('/', cookies={'session': 'session_id'}).json() == {

@@ -2,15 +2,15 @@ import aioredis
 import functools
 import typing
 
-from starsessions.backends.base import SessionBackend
 from starsessions.exceptions import ImproperlyConfigured
+from starsessions.stores.base import SessionStore
 
 
 def prefix_factory(prefix: str, key: str) -> str:
     return prefix + key
 
 
-class RedisBackend(SessionBackend):
+class RedisStore(SessionStore):
     """Stores session data in a Redis server."""
 
     def __init__(
@@ -20,9 +20,9 @@ class RedisBackend(SessionBackend):
         prefix: typing.Union[typing.Callable[[str], str], str] = '',
     ) -> None:
         """
-        Initializes redis session backend. Either `url` or `connection` required. To namespace keys in Redis use
-        `prefix` argument. It can be a string or callable that accepts a single string argument and returns new Redis
-        key as string.
+        Initializes redis session store. Either `url` or `connection` required. To namespace keys in Redis use `prefix`
+        argument. It can be a string or callable that accepts a single string argument and returns new Redis key as
+        string.
 
         :param url:  Redis URL. Defaults to None.
         :param connection: aioredis connection. Defaults to None

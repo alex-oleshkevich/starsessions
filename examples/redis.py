@@ -1,5 +1,5 @@
 """
-This examples demonstrates redis backend usage.
+This examples demonstrates redis store usage.
 
 You can change Redis connection by specifying REDIS_URL environment variable.
 
@@ -9,7 +9,7 @@ This example requires `aioredis` to be installed:
 Usage:
 > uvicorn examples.redis:app
 
-Access localhost:8000 for management panel
+Open http://localhost:8000 for management panela
 """
 import datetime
 import json
@@ -21,7 +21,7 @@ from starlette.responses import HTMLResponse, RedirectResponse
 from starlette.routing import Route
 
 from starsessions import SessionAutoloadMiddleware, SessionMiddleware
-from starsessions.backends.redis import RedisBackend
+from starsessions.stores.redis import RedisStore
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
@@ -58,7 +58,7 @@ routes = [
     Route("/clean", endpoint=clean),
 ]
 middleware = [
-    Middleware(SessionMiddleware, backend=RedisBackend(REDIS_URL)),
+    Middleware(SessionMiddleware, store=RedisStore(REDIS_URL)),
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

@@ -1,29 +1,29 @@
 import pytest
 
-from starsessions.backends import InMemoryBackend, SessionBackend
+from starsessions.stores import InMemoryStore, SessionStore
 
 
 @pytest.fixture()
-def in_memory_backend() -> SessionBackend:
-    return InMemoryBackend()
+def in_memory_store() -> SessionStore:
+    return InMemoryStore()
 
 
 @pytest.mark.asyncio
-async def test_in_memory_read_write(in_memory_backend: SessionBackend) -> None:
-    new_id = await in_memory_backend.write("session_id", b'data', lifetime=60)
+async def test_in_memory_read_write(in_memory_store: SessionStore) -> None:
+    new_id = await in_memory_store.write("session_id", b'data', lifetime=60)
     assert new_id == "session_id"
-    assert await in_memory_backend.read("session_id", lifetime=60) == b'data'
+    assert await in_memory_store.read("session_id", lifetime=60) == b'data'
 
 
 @pytest.mark.asyncio
-async def test_in_memory_remove(in_memory_backend: SessionBackend) -> None:
-    await in_memory_backend.write("session_id", b'data', lifetime=60)
-    await in_memory_backend.remove("session_id")
-    assert await in_memory_backend.exists("session_id") is False
+async def test_in_memory_remove(in_memory_store: SessionStore) -> None:
+    await in_memory_store.write("session_id", b'data', lifetime=60)
+    await in_memory_store.remove("session_id")
+    assert await in_memory_store.exists("session_id") is False
 
 
 @pytest.mark.asyncio
-async def test_in_memory_exists(in_memory_backend: SessionBackend) -> None:
-    await in_memory_backend.write("session_id", b'data', lifetime=60)
-    assert await in_memory_backend.exists("session_id") is True
-    assert await in_memory_backend.exists("other id") is False
+async def test_in_memory_exists(in_memory_store: SessionStore) -> None:
+    await in_memory_store.write("session_id", b'data', lifetime=60)
+    assert await in_memory_store.exists("session_id") is True
+    assert await in_memory_store.exists("other id") is False
