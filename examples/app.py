@@ -4,7 +4,7 @@ This examples demonstrates base usage of this library. A CookieStore is used.
 Usage:
 > uvicorn examples.app:app
 
-Open http://localhost:8000 for management panela
+Open http://localhost:8000 for management panel.
 """
 import datetime
 import json

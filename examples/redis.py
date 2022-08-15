@@ -9,7 +9,7 @@ This example requires `aioredis` to be installed:
 Usage:
 > uvicorn examples.redis:app
 
-Open http://localhost:8000 for management panela
+Open http://localhost:8000 for management panel.
 """
 import datetime
 import json
