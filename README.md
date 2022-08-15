@@ -52,7 +52,7 @@ session_store = CookieStore(secret_key='TOP SECRET')
 
 app = Starlette(
     middleware=[
-        Middleware(SessionMiddleware, store=session_store, max_age=session_lifetime),
+        Middleware(SessionMiddleware, store=session_store, lifetime=session_lifetime),
     ],
     routes=[
         Route('/', index_view),
@@ -64,7 +64,7 @@ app = Starlette(
 
 By default, the middleware uses strict default.
 The cookie lifetime is limited to session and only HTTPS protocol allowed. You can change these defaults by using
-`https_only` and `max_age` arguments:
+`cookie_https_only` and `lifetime` arguments:
 
 ```python
 from starlette.middleware import Middleware
@@ -74,7 +74,7 @@ from starsessions import CookieStore, SessionMiddleware
 session_store = CookieStore(secret_key='TOP SECRET')
 
 middleware = [
-    Middleware(SessionMiddleware, store=session_store, https_only=False, max_age=3600 * 24 * 14),
+    Middleware(SessionMiddleware, store=session_store, cookie_https_only=False, lifetime=3600 * 24 * 14),
 ]
 ```
 
@@ -124,40 +124,40 @@ middleware = [
 
 ### Cookie path
 
-You can pass `path` arguments to enable session cookies on specific URLs. For example, to activate session cookie only
-for admin area (which is hosted under `/admin` path prefix), use `path="/admin"` middleware argument.
+You can pass `cookie_path` argument to bind session cookie to specific URLs. For example, to activate session cookie only
+for admin area (which is hosted under `/admin` path prefix), use `cookie_path="/admin"` middleware argument.
 
 ```python
 from starlette.middleware import Middleware
 from starsessions import SessionMiddleware
 
 middleware = [
-    Middleware(SessionMiddleware, path='/admin'),
+    Middleware(SessionMiddleware, cookie_path='/admin'),
 ]
 ```
 
-All other URLs not matching value of `path` will not receive cookie thus session will be unavailable.
+All other URLs not matching value of `cookie_path` will not receive cookie thus session will be unavailable.
 
 ### Cookie domain
 
-You can also specify which hosts can receive a cookie by passing `domain` argument to the middleware.
+You can also specify which hosts can receive a cookie by passing `cookie_domain` argument to the middleware.
 
 ```python
 from starlette.middleware import Middleware
 from starsessions import SessionMiddleware
 
 middleware = [
-    Middleware(SessionMiddleware, domain='example.com'),
+    Middleware(SessionMiddleware, cookie_domain='example.com'),
 ]
 ```
 
 > Note, this makes session cookie available for subdomains too.
-> For example, when you set `domain=example.com` then session cookie will be available on subdomains
+> For example, when you set `cookie_domain=example.com` then session cookie will be available on subdomains
 > like `app.example.com`.
 
 ### Session-only cookies
 
-If you want session cookie to automatically remove from tbe browser when tab closes then set `max_age` to `0`.
+If you want session cookie to automatically remove from tbe browser when tab closes then set `lifetime` to `0`.
 > Note, this depends on browser implementation!
 
 ```python
@@ -165,7 +165,7 @@ from starlette.middleware import Middleware
 from starsessions import SessionMiddleware
 
 middleware = [
-    Middleware(SessionMiddleware, max_age=0),
+    Middleware(SessionMiddleware, lifetime=0),
 ]
 ```
 
@@ -206,7 +206,7 @@ store = RedisStore(connection=redis)
 
 #### Redis key expiry
 
-The store will use `max_age` to set key expiration TTL.
+The store will use `lifetime` to set key expiration TTL.
 
 It's important to note that on every session write, the Redis expiry resets.
 For example, if you set the Redis expire time for 10 seconds, and you perform another write to the session
