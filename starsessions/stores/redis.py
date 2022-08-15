@@ -17,7 +17,7 @@ class RedisStore(SessionStore):
         self,
         url: typing.Optional[str] = None,
         connection: typing.Optional[aioredis.Redis] = None,
-        prefix: typing.Union[typing.Callable[[str], str], str] = '',
+        prefix: typing.Union[typing.Callable[[str], str], str] = 'starsessions_',
     ) -> None:
         """
         Initializes redis session store. Either `url` or `connection` required. To namespace keys in Redis use `prefix`
