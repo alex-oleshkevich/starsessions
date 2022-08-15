@@ -9,7 +9,7 @@ This example requires `aioredis` to be installed:
 Usage:
 > uvicorn examples.redis:app
 
-Open http://localhost:8000 for management panela
+Open http://localhost:8000 for management panel.
 """
 import datetime
 import json
@@ -23,7 +23,7 @@ from starlette.routing import Route
 from starsessions import SessionAutoloadMiddleware, SessionMiddleware
 from starsessions.stores.redis import RedisStore
 
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost")
 
 
 async def homepage(request: Request) -> HTMLResponse:
@@ -31,17 +31,17 @@ async def homepage(request: Request) -> HTMLResponse:
 
     # built-in json.dumps cannot serialize Session object, convert it to dict first
     return HTMLResponse(
-        f'<div>session data: {json.dumps(request.session)}</div>'
-        '<ol>'
+        f"<div>session data: {json.dumps(request.session)}</div>"
+        "<ol>"
         '<li><a href="/set">set example data</a></li>'
         '<li><a href="/clean">clear example data</a></li>'
-        '</ol>'
+        "</ol>"
     )
 
 
 async def set_time(request: Request) -> RedirectResponse:
     """Access this view (GET "/set") to set session contents."""
-    request.session["hello"] = 'world'
+    request.session["hello"] = "world"
     request.session["date"] = datetime.datetime.now().isoformat()
     return RedirectResponse("/")
 

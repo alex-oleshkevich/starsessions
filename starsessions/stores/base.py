@@ -16,7 +16,7 @@ class SessionStore(abc.ABC):  # pragma: no cover
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write(self, session_id: str, data: bytes, lifetime: int) -> str:
+    async def write(self, session_id: str, data: bytes, ttl: int) -> str:
         """
         Write session data to the storage.
 
@@ -24,7 +24,7 @@ class SessionStore(abc.ABC):  # pragma: no cover
 
         :param session_id: ID associated with session
         :param data: session data serialized to bytes
-        :param lifetime: session lifetime duration
+        :param ttl: keep session data this amount of time, in seconds
         :returns str: session ID
         """
         raise NotImplementedError()

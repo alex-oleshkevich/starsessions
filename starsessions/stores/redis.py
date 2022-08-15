@@ -17,7 +17,7 @@ class RedisStore(SessionStore):
         self,
         url: typing.Optional[str] = None,
         connection: typing.Optional[aioredis.Redis] = None,
-        prefix: typing.Union[typing.Callable[[str], str], str] = 'starsessions_',
+        prefix: typing.Union[typing.Callable[[str], str], str] = "",
     ) -> None:
         """
         Initializes redis session store. Either `url` or `connection` required. To namespace keys in Redis use `prefix`
@@ -40,15 +40,15 @@ class RedisStore(SessionStore):
     async def read(self, session_id: str, lifetime: int) -> bytes:
         value = await self._connection.get(self.prefix(session_id))
         if value is None:
-            return b''
+            return b""
         return value  # type: ignore
 
-    async def write(self, session_id: str, data: bytes, lifetime: int) -> str:
+    async def write(self, session_id: str, data: bytes, ttl: int) -> str:
         # Redis will fail for session-only cookies, as zero is not a valid expiry value.
         # We cannot know the final session duration so set here something close to reality.
         # FIXME: we want something better here
-        lifetime = max(lifetime, 3600)  # 1h
-        await self._connection.set(self.prefix(session_id), data, ex=lifetime)
+        ttl = max(ttl, 3600)  # 1h
+        await self._connection.set(self.prefix(session_id), data, ex=ttl)
         return session_id
 
     async def remove(self, session_id: str) -> None:

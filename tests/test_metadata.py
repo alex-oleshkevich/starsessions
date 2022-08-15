@@ -18,8 +18,8 @@ def test_requires_loaded_session(store: SessionStore) -> None:
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    with pytest.raises(SessionNotLoaded, match='Cannot read session metadata because session was not loaded.'):
-        assert client.get('/').json() == {}
+    with pytest.raises(SessionNotLoaded, match="Cannot read session metadata because session was not loaded."):
+        assert client.get("/").json() == {}
 
 
 def test_load_should_create_new_metadata(store: SessionStore) -> None:
@@ -32,11 +32,11 @@ def test_load_should_create_new_metadata(store: SessionStore) -> None:
 
     app = SessionMiddleware(app, store=store, lifetime=1209600)
     client = TestClient(app)
-    with mock.patch('time.time', lambda: 1660556520):
-        assert client.get('/', cookies={'session': 'session_id'}).json() == {
-            'created': 1660556520,
-            'last_access': 1660556520,
-            'lifetime': 1209600,
+    with mock.patch("time.time", lambda: 1660556520):
+        assert client.get("/", cookies={"session": "session_id"}).json() == {
+            "created": 1660556520,
+            "last_access": 1660556520,
+            "lifetime": 1209600,
         }
 
 
@@ -44,7 +44,7 @@ def test_load_should_not_overwrite_created_timestamp(store: SessionStore) -> Non
     metadata = {"created": 42, "last_access": 0, "lifetime": 0}
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
-        await store.write('session_id', json.dumps({'__metadata__': metadata}).encode(), lifetime=60)
+        await store.write("session_id", json.dumps({"__metadata__": metadata}).encode(), ttl=60)
 
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
@@ -54,11 +54,11 @@ def test_load_should_not_overwrite_created_timestamp(store: SessionStore) -> Non
 
     app = SessionMiddleware(app, store=store, lifetime=1209600)
     client = TestClient(app)
-    with mock.patch('time.time', lambda: 1660556520):
-        assert client.get('/', cookies={'session': 'session_id'}).json() == {
-            'created': 42,
-            'last_access': 1660556520,
-            'lifetime': 0,
+    with mock.patch("time.time", lambda: 1660556520):
+        assert client.get("/", cookies={"session": "session_id"}).json() == {
+            "created": 42,
+            "last_access": 1660556520,
+            "lifetime": 0,
         }
 
 
@@ -67,23 +67,23 @@ def test_should_update_last_access_time_on_load(store: SessionStore) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
 
-        connection.session['key'] = 'value'  # change session to trigger save
+        connection.session["key"] = "value"  # change session to trigger save
 
         response = JSONResponse(get_session_metadata(connection))
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store, lifetime=1209600)
     client = TestClient(app)
-    with mock.patch('time.time', lambda: 1660556520):
-        assert client.get('/', cookies={'session': 'session_id'}).json() == {
-            'created': 1660556520,
-            'last_access': 1660556520,
-            'lifetime': 1209600,
+    with mock.patch("time.time", lambda: 1660556520):
+        assert client.get("/", cookies={"session": "session_id"}).json() == {
+            "created": 1660556520,
+            "last_access": 1660556520,
+            "lifetime": 1209600,
         }
 
-    with mock.patch('time.time', lambda: 1660556000):
-        assert client.get('/', cookies={'session': 'session_id'}).json() == {
-            'created': 1660556520,
-            'last_access': 1660556000,
-            'lifetime': 1209600,
+    with mock.patch("time.time", lambda: 1660556000):
+        assert client.get("/", cookies={"session": "session_id"}).json() == {
+            "created": 1660556520,
+            "last_access": 1660556000,
+            "lifetime": 1209600,
         }

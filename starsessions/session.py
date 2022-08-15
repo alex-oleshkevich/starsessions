@@ -36,7 +36,7 @@ def get_session_handler(connection: HTTPConnection) -> SessionHandler:
 
     Session handler is a tool for low level session management.
     """
-    return typing.cast(SessionHandler, connection.scope['session_handler'])
+    return typing.cast(SessionHandler, connection.scope["session_handler"])
 
 
 async def load_session(connection: HTTPConnection) -> None:
@@ -61,11 +61,18 @@ def get_session_metadata(connection: HTTPConnection) -> SessionMetadata:
     :raise SessionNotLoaded: if session is not loaded.
     """
     if not is_loaded(connection):
-        raise SessionNotLoaded('Cannot read session metadata because session was not loaded.')
+        raise SessionNotLoaded("Cannot read session metadata because session was not loaded.")
 
     metadata = get_session_handler(connection).metadata
     assert metadata  # satisfy mypy
     return metadata
+
+
+def get_session_remaining_seconds(connection: HTTPConnection) -> int:
+    """Get total seconds remaining before this session expires."""
+    now = time.time()
+    metadata = get_session_metadata(connection)
+    return int((metadata["created"] + metadata["lifetime"]) - now)
 
 
 class SessionHandler:
@@ -107,9 +114,9 @@ class SessionHandler:
             )
 
         # read and merge metadata
-        metadata = {'lifetime': self.lifetime, 'created': time.time(), 'last_access': time.time()}
-        metadata.update(data.pop('__metadata__', {}))
-        metadata.update({'last_access': time.time()})  # force update
+        metadata = {"lifetime": self.lifetime, "created": time.time(), "last_access": time.time()}
+        metadata.update(data.pop("__metadata__", {}))
+        metadata.update({"last_access": time.time()})  # force update
         self.metadata = metadata  # type: ignore[assignment]
 
         self.connection.session.clear()  # replace session contents to avoid mixing existing and new session data
@@ -117,13 +124,13 @@ class SessionHandler:
 
         self.initially_empty = len(self.connection.session) == 0
 
-    async def save(self) -> str:
-        self.connection.session.update({'__metadata__': self.metadata})
+    async def save(self, remaining_time: int) -> str:
+        self.connection.session.update({"__metadata__": self.metadata})
 
         self.session_id = await self.store.write(
             session_id=self.session_id or generate_session_id(),
             data=self.serializer.serialize(self.connection.session),
-            lifetime=self.lifetime,
+            ttl=remaining_time,
         )
         return self.session_id
 

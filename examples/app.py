@@ -4,7 +4,7 @@ This examples demonstrates base usage of this library. A CookieStore is used.
 Usage:
 > uvicorn examples.app:app
 
-Open http://localhost:8000 for management panela
+Open http://localhost:8000 for management panel.
 """
 import datetime
 import json
@@ -20,11 +20,11 @@ from starsessions import CookieStore, SessionAutoloadMiddleware, SessionMiddlewa
 async def homepage(request: Request) -> HTMLResponse:
     """Access this view (GET "/") to display session contents."""
     return HTMLResponse(
-        f'<div>session data: {json.dumps(request.session)}</div>'
-        '<ol>'
+        f"<div>session data: {json.dumps(request.session)}</div>"
+        "<ol>"
         '<li><a href="/set">set example data</a></li>'
         '<li><a href="/clean">clear example data</a></li>'
-        '</ol>'
+        "</ol>"
     )
 
 
@@ -46,7 +46,7 @@ routes = [
     Route("/clean", endpoint=clean),
 ]
 middleware = [
-    Middleware(SessionMiddleware, store=CookieStore(secret_key='key')),
+    Middleware(SessionMiddleware, store=CookieStore(secret_key="key"), cookie_https_only=False, lifetime=10),
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

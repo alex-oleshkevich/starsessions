@@ -33,21 +33,21 @@ async def homepage(request: Request) -> Response:
 
 async def login(request: Request) -> Response:
     form_data = await request.form()
-    username = form_data['username']
-    request.session['username'] = username
+    username = form_data["username"]
+    request.session["username"] = username
     regenerate_session_id(request)
-    return RedirectResponse('/profile', 302)
+    return RedirectResponse("/profile", 302)
 
 
 async def logout(request: Request) -> Response:
     request.session.clear()
-    return RedirectResponse('/', 302)
+    return RedirectResponse("/", 302)
 
 
 async def profile(request: Request) -> Response:
-    username = request.session.get('username')
+    username = request.session.get("username")
     if not username:
-        return RedirectResponse('/', 302)
+        return RedirectResponse("/", 302)
 
     return HTMLResponse(
         """
@@ -63,8 +63,8 @@ async def profile(request: Request) -> Response:
 
 routes = [
     Route("/", endpoint=homepage),
-    Route("/login", endpoint=login, methods=['POST']),
-    Route("/logout", endpoint=logout, methods=['POST']),
+    Route("/login", endpoint=login, methods=["POST"]),
+    Route("/logout", endpoint=logout, methods=["POST"]),
     Route("/profile", endpoint=profile),
 ]
 middleware = [
