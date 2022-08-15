@@ -10,8 +10,8 @@ def cookie_store() -> SessionStore:
 
 @pytest.mark.asyncio
 async def test_cookie_read_write(cookie_store: SessionStore) -> None:
-    new_id = await cookie_store.write("session_id", b'some data', lifetime=60)
-    assert await cookie_store.read(new_id, lifetime=60) == b'some data'
+    new_id = await cookie_store.write("session_id", b"some data", lifetime=60)
+    assert await cookie_store.read(new_id, lifetime=60) == b"some data"
 
 
 @pytest.mark.asyncio

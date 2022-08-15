@@ -23,7 +23,7 @@ class JsonSerializer(Serializer):
         self._json_decoder = json_decoder
 
     def serialize(self, data: typing.Any) -> bytes:
-        return json.dumps(data, cls=self._json_encoder).encode('utf-8')
+        return json.dumps(data, cls=self._json_encoder).encode("utf-8")
 
     def deserialize(self, data: bytes) -> typing.Dict[str, typing.Any]:
         if not data:

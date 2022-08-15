@@ -65,7 +65,7 @@ class SessionMiddleware:
 
                 # session data loaded but empty, no matter whether it was initially empty or cleared
                 # we have to remove the cookie and clear the storage
-                if not self.path or self.path and scope['path'].startswith(self.path):
+                if not self.path or self.path and scope["path"].startswith(self.path):
                     headers = MutableHeaders(scope=message)
                     header_value = "{}={}; {}".format(
                         self.session_cookie,
@@ -82,16 +82,16 @@ class SessionMiddleware:
 
             headers = MutableHeaders(scope=message)
             header_parts = [
-                f'{self.session_cookie}={session_id}',
-                f'path={path}',
+                f"{self.session_cookie}={session_id}",
+                f"path={path}",
             ]
             if self.max_age:
-                header_parts.append(f'Max-Age={self.max_age}')
+                header_parts.append(f"Max-Age={self.max_age}")
             if self.domain:
-                header_parts.append(f'Domain={self.domain}')
+                header_parts.append(f"Domain={self.domain}")
 
             header_parts.append(self.security_flags)
-            header_value = '; '.join(header_parts)
+            header_value = "; ".join(header_parts)
             headers.append("Set-Cookie", header_value)
 
             await send(message)

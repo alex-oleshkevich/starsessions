@@ -10,7 +10,7 @@ class InMemoryStore(SessionStore):
         self.data: typing.Dict[str, bytes] = {}
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
-        return self.data.get(session_id, b'')
+        return self.data.get(session_id, b"")
 
     async def write(self, session_id: str, data: bytes, lifetime: int) -> str:
         self.data[session_id] = data

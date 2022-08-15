@@ -19,7 +19,7 @@ def test_loads_empty_session(store: SessionStore) -> None:
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    assert client.get('/').json() == {}
+    assert client.get("/").json() == {}
 
 
 def test_handles_not_existing_session(store: SessionStore) -> None:
@@ -33,14 +33,14 @@ def test_handles_not_existing_session(store: SessionStore) -> None:
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    assert client.get('/', cookies={'session': 'session_id'}).json() == {}
+    assert client.get("/", cookies={"session": "session_id"}).json() == {}
 
 
 def test_loads_existing_session(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await store.write('session_id', b'{"key": "value"}', lifetime=60)
+        await store.write("session_id", b'{"key": "value"}', lifetime=60)
         await load_session(connection)
 
         response = JSONResponse(connection.session)
@@ -48,7 +48,7 @@ def test_loads_existing_session(store: SessionStore) -> None:
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    assert client.get('/', cookies={'session': 'session_id'}).json() == {'key': 'value'}
+    assert client.get("/", cookies={"session": "session_id"}).json() == {"key": "value"}
 
 
 def test_send_cookie_if_session_created(store: SessionStore) -> None:
@@ -57,48 +57,48 @@ def test_send_cookie_if_session_created(store: SessionStore) -> None:
         await load_session(connection)
 
         connection.session["key"] = "value"
-        response = Response('')
+        response = Response("")
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    response = client.get('/')
-    assert 'session' in response.headers.get('set-cookie')
+    response = client.get("/")
+    assert "session" in response.headers.get("set-cookie")
 
 
 def test_send_cookie_if_session_updated(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await store.write('session_id', b'{"key2": "value2"}', lifetime=60)
+        await store.write("session_id", b'{"key2": "value2"}', lifetime=60)
         await load_session(connection)
 
         connection.session["key"] = "value"
-        response = Response('')
+        response = Response("")
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    response = client.get('/')
-    assert 'session' in response.headers.get('set-cookie')
+    response = client.get("/")
+    assert "session" in response.headers.get("set-cookie")
 
 
 def test_send_cookie_if_session_destroyed(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await store.write('session_id', b'{"key2": "value2"}', lifetime=60)
+        await store.write("session_id", b'{"key2": "value2"}', lifetime=60)
         await load_session(connection)
 
         connection.session.clear()
-        response = Response('')
+        response = Response("")
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    response = client.get('/', cookies={'session': 'session_id'})
-    assert 'session' in response.headers.get('set-cookie')
-    assert '01 Jan 1970 00:00:00 GMT' in response.headers.get('set-cookie')
+    response = client.get("/", cookies={"session": "session_id"})
+    assert "session" in response.headers.get("set-cookie")
+    assert "01 Jan 1970 00:00:00 GMT" in response.headers.get("set-cookie")
 
 
 @pytest.mark.asyncio
@@ -106,17 +106,17 @@ async def test_will_clear_storage_if_session_destroyed(store: SessionStore) -> N
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await store.write('session_id', b'{"key2": "value2"}', lifetime=60)
+        await store.write("session_id", b'{"key2": "value2"}', lifetime=60)
         await load_session(connection)
 
         connection.session.clear()
-        response = Response('')
+        response = Response("")
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    client.get('/', cookies={'session': 'session_id'})
-    assert not await store.exists('session_id')
+    client.get("/", cookies={"session": "session_id"})
+    assert not await store.exists("session_id")
 
 
 def test_will_not_send_cookie_if_initially_empty_session_destroyed(store: SessionStore) -> None:
@@ -125,13 +125,13 @@ def test_will_not_send_cookie_if_initially_empty_session_destroyed(store: Sessio
         await load_session(connection)
 
         connection.session.clear()
-        response = Response('')
+        response = Response("")
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    response = client.get('/', cookies={'session': 'session_id'})
-    assert 'set-cookie' not in response.headers
+    response = client.get("/", cookies={"session": "session_id"})
+    assert "set-cookie" not in response.headers
 
 
 def test_will_not_send_cookie_if_session_was_not_loaded(store: SessionStore) -> None:
@@ -139,94 +139,94 @@ def test_will_not_send_cookie_if_session_was_not_loaded(store: SessionStore) -> 
         connection = HTTPConnection(scope, receive)
 
         connection.session.clear()
-        response = Response('')
+        response = Response("")
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
-    response = client.get('/', cookies={'session': 'session_id'})
-    assert 'set-cookie' not in response.headers
+    response = client.get("/", cookies={"session": "session_id"})
+    assert "set-cookie" not in response.headers
 
 
 def test_max_age_argument_set_in_cookie(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
-        connection.session['key'] = 'value'
+        connection.session["key"] = "value"
 
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store, max_age=-1)
     client = TestClient(app)
-    response = client.get('/')
+    response = client.get("/")
 
     # requests removes expired cookies from response.cookies,
-    assert 'max-age' in response.headers.get('set-cookie').lower()
+    assert "max-age" in response.headers.get("set-cookie").lower()
 
 
 def test_same_site_argument_set_in_cookie(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
-        connection.session['key'] = 'value'
+        connection.session["key"] = "value"
 
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, same_site='none')
+    app = SessionMiddleware(app, store=store, same_site="none")
     client = TestClient(app)
-    response = client.get('/')
+    response = client.get("/")
 
-    assert 'samesite=none' in response.headers['set-cookie']
+    assert "samesite=none" in response.headers["set-cookie"]
 
 
 def test_path_argument_set_in_cookie(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
-        connection.session['key'] = 'value'
+        connection.session["key"] = "value"
 
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, path='/admin')
+    app = SessionMiddleware(app, store=store, path="/admin")
     client = TestClient(app)
-    response = client.get('/')
+    response = client.get("/")
 
-    assert 'path=/admin' in response.headers['set-cookie'].lower()
+    assert "path=/admin" in response.headers["set-cookie"].lower()
 
 
 def test_domain_argument_set_in_cookie(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
-        connection.session['key'] = 'value'
+        connection.session["key"] = "value"
 
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
-    app = SessionMiddleware(app, store=store, domain='example.com')
+    app = SessionMiddleware(app, store=store, domain="example.com")
     client = TestClient(app)
-    response = client.get('/')
+    response = client.get("/")
 
-    assert 'domain=example.com' in response.headers['set-cookie'].lower()
+    assert "domain=example.com" in response.headers["set-cookie"].lower()
 
 
 def test_set_secure_cookie(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
-        connection.session['key'] = 'value'
+        connection.session["key"] = "value"
 
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store, https_only=True)
     client = TestClient(app)
-    response = client.get('/')
+    response = client.get("/")
 
-    assert 'secure' in response.headers['set-cookie'].lower()
+    assert "secure" in response.headers["set-cookie"].lower()
 
 
 def test_session_only_cookies(store: SessionStore) -> None:
@@ -239,12 +239,12 @@ def test_session_only_cookies(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
-        connection.session['key'] = 'value'
+        connection.session["key"] = "value"
 
         response = JSONResponse(connection.session)
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store, max_age=0)
     client = TestClient(app)
-    response = client.get('/')
-    assert 'max-age' not in response.headers['set-cookie'].lower()
+    response = client.get("/")
+    assert "max-age" not in response.headers["set-cookie"].lower()

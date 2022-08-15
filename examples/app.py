@@ -20,11 +20,11 @@ from starsessions import CookieStore, SessionAutoloadMiddleware, SessionMiddlewa
 async def homepage(request: Request) -> HTMLResponse:
     """Access this view (GET "/") to display session contents."""
     return HTMLResponse(
-        f'<div>session data: {json.dumps(request.session)}</div>'
-        '<ol>'
+        f"<div>session data: {json.dumps(request.session)}</div>"
+        "<ol>"
         '<li><a href="/set">set example data</a></li>'
         '<li><a href="/clean">clear example data</a></li>'
-        '</ol>'
+        "</ol>"
     )
 
 
@@ -46,7 +46,7 @@ routes = [
     Route("/clean", endpoint=clean),
 ]
 middleware = [
-    Middleware(SessionMiddleware, store=CookieStore(secret_key='key')),
+    Middleware(SessionMiddleware, store=CookieStore(secret_key="key")),
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

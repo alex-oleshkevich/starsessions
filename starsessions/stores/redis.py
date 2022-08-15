@@ -17,7 +17,7 @@ class RedisStore(SessionStore):
         self,
         url: typing.Optional[str] = None,
         connection: typing.Optional[aioredis.Redis] = None,
-        prefix: typing.Union[typing.Callable[[str], str], str] = '',
+        prefix: typing.Union[typing.Callable[[str], str], str] = "",
     ) -> None:
         """
         Initializes redis session store. Either `url` or `connection` required. To namespace keys in Redis use `prefix`
@@ -40,7 +40,7 @@ class RedisStore(SessionStore):
     async def read(self, session_id: str, lifetime: int) -> bytes:
         value = await self._connection.get(self.prefix(session_id))
         if value is None:
-            return b''
+            return b""
         return value  # type: ignore
 
     async def write(self, session_id: str, data: bytes, lifetime: int) -> str:
