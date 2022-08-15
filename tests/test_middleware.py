@@ -40,7 +40,7 @@ def test_loads_existing_session(backend: SessionBackend) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await backend.write('session_id', b'{"key": "value"}')
+        await backend.write('session_id', b'{"key": "value"}', lifetime=60)
         await load_session(connection)
 
         response = JSONResponse(connection.session)
@@ -70,7 +70,7 @@ def test_send_cookie_if_session_updated(backend: SessionBackend) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await backend.write('session_id', b'{"key2": "value2"}')
+        await backend.write('session_id', b'{"key2": "value2"}', lifetime=60)
         await load_session(connection)
 
         connection.session["key"] = "value"
@@ -87,7 +87,7 @@ def test_send_cookie_if_session_destroyed(backend: SessionBackend) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await backend.write('session_id', b'{"key2": "value2"}')
+        await backend.write('session_id', b'{"key2": "value2"}', lifetime=60)
         await load_session(connection)
 
         connection.session.clear()
@@ -106,7 +106,7 @@ async def test_will_clear_storage_if_session_destroyed(backend: SessionBackend) 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
-        await backend.write('session_id', b'{"key2": "value2"}')
+        await backend.write('session_id', b'{"key2": "value2"}', lifetime=60)
         await load_session(connection)
 
         connection.session.clear()

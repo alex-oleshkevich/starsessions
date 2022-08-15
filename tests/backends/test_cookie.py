@@ -5,13 +5,13 @@ from starsessions.backends import CookieBackend, SessionBackend
 
 @pytest.fixture()
 def cookie_backend() -> SessionBackend:
-    return CookieBackend("key", 14)
+    return CookieBackend("key")
 
 
 @pytest.mark.asyncio
 async def test_cookie_read_write(cookie_backend: SessionBackend) -> None:
-    new_id = await cookie_backend.write("session_id", b'some data')
-    assert await cookie_backend.read(new_id) == b'some data'
+    new_id = await cookie_backend.write("session_id", b'some data', lifetime=60)
+    assert await cookie_backend.read(new_id, lifetime=60) == b'some data'
 
 
 @pytest.mark.asyncio

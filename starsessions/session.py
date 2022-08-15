@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import secrets
+import time
 import typing
 from starlette.requests import HTTPConnection
 
 from starsessions.backends import SessionBackend
+from starsessions.exceptions import SessionNotLoaded
 from starsessions.serializers import Serializer
+from starsessions.types import SessionMetadata
 
 
 def generate_session_id() -> str:
@@ -51,6 +54,15 @@ def is_loaded(connection: HTTPConnection) -> bool:
     return get_session_handler(connection).is_loaded
 
 
+def get_session_metadata(connection: HTTPConnection) -> SessionMetadata:
+    if not is_loaded(connection):
+        raise SessionNotLoaded('Cannot read session metadata because session was not loaded.')
+
+    metadata = get_session_handler(connection).metadata
+    assert metadata  # satisfy mypy
+    return metadata
+
+
 class SessionHandler:
     """
     A tool for low level session management.
@@ -64,6 +76,7 @@ class SessionHandler:
         session_id: typing.Optional[str],
         backend: SessionBackend,
         serializer: Serializer,
+        lifetime: int,
     ) -> None:
         self.connection = connection
         self.session_id = session_id
@@ -71,6 +84,8 @@ class SessionHandler:
         self.serializer = serializer
         self.is_loaded = False
         self.initially_empty = False
+        self.lifetime = lifetime
+        self.metadata: typing.Optional[SessionMetadata] = None
 
     async def load(self) -> None:
         if self.is_loaded:  # don't refresh existing session, it may contain user data
@@ -80,8 +95,17 @@ class SessionHandler:
         data = {}
         if self.session_id:
             data = self.serializer.deserialize(
-                await self.backend.read(self.session_id),
+                await self.backend.read(
+                    session_id=self.session_id,
+                    lifetime=self.lifetime,
+                ),
             )
+
+        # read and merge metadata
+        metadata = {'lifetime': self.lifetime, 'created': time.time(), 'last_access': time.time()}
+        metadata.update(data.pop('__metadata__', {}))
+        metadata.update({'last_access': time.time()})  # force update
+        self.metadata = metadata  # type: ignore[assignment]
 
         self.connection.session.clear()  # replace session contents to avoid mixing existing and new session data
         self.connection.session.update(data)
@@ -89,9 +113,12 @@ class SessionHandler:
         self.initially_empty = len(self.connection.session) == 0
 
     async def save(self) -> str:
+        self.connection.session.update({'__metadata__': self.metadata})
+
         self.session_id = await self.backend.write(
-            self.session_id or generate_session_id(),
-            self.serializer.serialize(self.connection.session),
+            session_id=self.session_id or generate_session_id(),
+            data=self.serializer.serialize(self.connection.session),
+            lifetime=self.lifetime,
         )
         return self.session_id
 
