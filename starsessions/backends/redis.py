@@ -13,7 +13,6 @@ class RedisBackend(SessionBackend):
         url: typing.Optional[str] = None,
         connection: typing.Optional[aioredis.Redis] = None,
         redis_key_func: typing.Optional[typing.Callable[[str], str]] = None,
-        expire: typing.Optional[int] = None,
     ) -> None:
         """
         Initializes redis session backend.
@@ -22,7 +21,6 @@ class RedisBackend(SessionBackend):
             url (str, optional): Redis URL. Defaults to None.
             connection (aioredis.Redis, optional): aioredis connection. Defaults to None.
             redis_key_func (typing.Callable[[str], str], optional): Customize redis key name. Defaults to None.
-            expire (int, optional): Key expiry in seconds. Defaults to None.
         """
         if not (url or connection):
             raise ImproperlyConfigured("Either 'url' or 'connection' arguments must be provided.")
@@ -33,7 +31,6 @@ class RedisBackend(SessionBackend):
             raise ImproperlyConfigured("The redis_key_func needs to be a callable that takes a single string argument.")
 
         self._redis_key_func = redis_key_func
-        self.expire = expire
 
     def get_redis_key(self, session_id: str) -> str:
         if self._redis_key_func:
@@ -41,14 +38,14 @@ class RedisBackend(SessionBackend):
         else:
             return session_id
 
-    async def read(self, session_id: str) -> bytes:
+    async def read(self, session_id: str, lifetime: int) -> bytes:
         value = await self._connection.get(self.get_redis_key(session_id))
         if value is None:
             return b''
         return value  # type: ignore
 
-    async def write(self, session_id: str, data: bytes) -> str:
-        await self._connection.set(self.get_redis_key(session_id), data, ex=self.expire)
+    async def write(self, session_id: str, data: bytes, lifetime: int) -> str:
+        await self._connection.set(self.get_redis_key(session_id), data, ex=lifetime)
         return session_id
 
     async def remove(self, session_id: str) -> None:

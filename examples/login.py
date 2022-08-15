@@ -67,5 +67,5 @@ routes = [
     Route("/logout", endpoint=logout, methods=['POST']),
     Route("/profile", endpoint=profile),
 ]
-middleware = [Middleware(SessionMiddleware, backend=CookieBackend(secret_key="secret", max_age=18000), autoload=True)]
+middleware = [Middleware(SessionMiddleware, backend=CookieBackend(secret_key="secret"), autoload=True)]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

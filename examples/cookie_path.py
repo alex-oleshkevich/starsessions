@@ -47,7 +47,5 @@ routes = [
     Route("/admin/set", endpoint=set_time),
     Route("/admin/clean", endpoint=clean),
 ]
-middleware = [
-    Middleware(SessionMiddleware, backend=CookieBackend(secret_key='key', max_age=18000), autoload=True, path='/admin')
-]
+middleware = [Middleware(SessionMiddleware, backend=CookieBackend(secret_key='key'), autoload=True, path='/admin')]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

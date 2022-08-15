@@ -10,7 +10,7 @@ from starsessions import SessionAutoloadMiddleware, SessionBackend, SessionMiddl
 
 @pytest.mark.asyncio
 async def test_always_loads_session(backend: SessionBackend) -> None:
-    await backend.write('session_id', b'{"key": "value"}')
+    await backend.write('session_id', b'{"key": "value"}', lifetime=60)
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
@@ -24,7 +24,7 @@ async def test_always_loads_session(backend: SessionBackend) -> None:
 
 @pytest.mark.asyncio
 async def test_loads_for_string_paths(backend: SessionBackend) -> None:
-    await backend.write('session_id', b'{"key": "value"}')
+    await backend.write('session_id', b'{"key": "value"}', lifetime=60)
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
@@ -42,7 +42,7 @@ async def test_loads_for_string_paths(backend: SessionBackend) -> None:
 
 @pytest.mark.asyncio
 async def test_loads_for_regex_paths(backend: SessionBackend) -> None:
-    await backend.write('session_id', b'{"key": "value"}')
+    await backend.write('session_id', b'{"key": "value"}', lifetime=60)
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)

@@ -56,9 +56,5 @@ routes = [
         ),
     ),
 ]
-middleware = [
-    Middleware(
-        SessionMiddleware, backend=CookieBackend(secret_key='key', max_age=18000), autoload=True, domain='localhost'
-    )
-]
+middleware = [Middleware(SessionMiddleware, backend=CookieBackend(secret_key='key'), autoload=True, domain='localhost')]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

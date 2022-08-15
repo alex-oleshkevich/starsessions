@@ -48,7 +48,7 @@ async def index_view(request):
 
 
 session_lifetime = 3600 * 24 * 14  # 14 days
-session_store = CookieBackend(secret_key='TOP SECRET', max_age=session_lifetime)
+session_store = CookieBackend(secret_key='TOP SECRET')
 
 app = Starlette(
     middleware=[
@@ -74,7 +74,7 @@ from starlette.middleware import Middleware
 from starsessions import CookieBackend, SessionAutoloadMiddleware, SessionMiddleware
 
 session_lifetime = 3600 * 24 * 14  # 14 days
-session_store = CookieBackend(secret_key='TOP SECRET', max_age=session_lifetime)
+session_store = CookieBackend(secret_key='TOP SECRET')
 
 # Autoload session for every request
 
@@ -160,7 +160,7 @@ Simply stores data in memory. The data is cleared after server restart. Mostly f
 
 Class: `starsessions.CookieBackend`
 
-Stores session data in a signed cookie on the client. This is the default backend.
+Stores session data in a signed cookie on the client.
 
 ### Redis
 
@@ -183,35 +183,13 @@ redis = aioredis.from_url('redis://localhost')
 backend = RedisBackend(connection=redis)
 ```
 
-You can optionally include an expiry time for the Redis keys. This will ensure that sessions get deleted from Redis
-automatically.
+#### Redis key expiry
 
-```python
-
-from starlette.middleware import Middleware
-from starlette.middleware.sessions import SessionMiddleware
-
-from starsessions.backends.redis import RedisBackend
-
-...
-
-max_age = 60 * 60 * 24  # in seconds
-
-backend = RedisBackend("redis://localhost", expire=max_age)
-middleware = [
-    Middleware(SessionMiddleware, backend=backend, max_age=max_age),
-]
-```
-
-Normally, the same `max_age` should be used for Redis expiry times and for the SessionMiddleware.
-Make sure you know what you're doing if you need different expiry times.
+The backend will use `max_age` to set key expiration TTL.
 
 It's important to note that on every session write, the Redis expiry resets.
 For example, if you set the Redis expire time for 10 seconds, and you perform another write to the session
-in those 10 seconds, the expire will be extended by 10 seconds.
-
-Absolute expiry times are still not supported, but very easy to support, so will probably be done in the future.
-Feel free to submit a PR yourself!
+in those 10 seconds, the expiry will be extended by 10 seconds.
 
 ## Custom backend
 
@@ -233,11 +211,11 @@ class InMemoryBackend(SessionBackend):
     def __init__(self):
         self._storage = {}
 
-    async def read(self, session_id: str) -> Dict:
+    async def read(self, session_id: str, lifetime: int) -> Dict:
         """ Read session data from a data source using session_id. """
         return self._storage.get(session_id, {})
 
-    async def write(self, session_id: str, data: Dict) -> str:
+    async def write(self, session_id: str, data: Dict, lifetime: int) -> str:
         """ Write session data into data source and return session id. """
         self._storage[session_id] = data
         return session_id

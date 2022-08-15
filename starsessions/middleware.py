@@ -40,7 +40,7 @@ class SessionMiddleware:
 
         connection = HTTPConnection(scope)
         session_id = connection.cookies.get(self.session_cookie)
-        handler = SessionHandler(connection, session_id, self.backend, self.serializer)
+        handler = SessionHandler(connection, session_id, self.backend, self.serializer, self.max_age)
 
         scope["session"] = {}
         scope["session_handler"] = handler
