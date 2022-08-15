@@ -25,6 +25,11 @@ async def test_redis_read_write(redis_backend: SessionBackend) -> None:
 
 
 @pytest.mark.asyncio
+async def test_redis_write_with_session_only_setup(redis_backend: SessionBackend) -> None:
+    await redis_backend.write("session_id", b'data', lifetime=0)
+
+
+@pytest.mark.asyncio
 async def test_redis_remove(redis_backend: SessionBackend) -> None:
     await redis_backend.write("session_id", b'data', lifetime=60)
     await redis_backend.remove("session_id")

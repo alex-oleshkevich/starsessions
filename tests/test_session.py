@@ -14,7 +14,7 @@ from starsessions.session import (
 
 
 def test_generate_session_id() -> None:
-    assert len(generate_session_id()) == 256
+    assert len(generate_session_id()) == 32
 
 
 def test_regenerate_session_id(backend: SessionBackend, serializer: Serializer) -> None:

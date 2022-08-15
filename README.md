@@ -60,6 +60,27 @@ app = Starlette(
 )
 ```
 
+### Cookie security
+
+By default, the middleware uses strict default.
+The cookie lifetime is limited to session and only HTTPS protocol allowed. You can change these defaults by using
+`https_only` and `max_age` arguments:
+
+```python
+from starlette.middleware import Middleware
+
+from starsessions import CookieBackend, SessionMiddleware
+
+session_store = CookieBackend(secret_key='TOP SECRET')
+
+middleware = [
+    Middleware(SessionMiddleware, backend=session_store, https_only=False, max_age=3600 * 24 * 14),
+]
+```
+
+The example above will let session usage over insecure HTTP transport and the session lifetime will be extended to 14
+days.
+
 ### Session autoload
 
 For performance reasons session is not autoloaded by default. Sometimes it is annoying to call `load_session` too often.
