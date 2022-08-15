@@ -5,6 +5,7 @@ from .session import (
     generate_session_id,
     get_session_handler,
     get_session_id,
+    get_session_metadata,
     is_loaded,
     load_session,
     regenerate_session_id,
@@ -28,4 +29,5 @@ __all__ = [
     "regenerate_session_id",
     "is_loaded",
     "load_session",
+    "get_session_metadata",
 ]

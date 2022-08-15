@@ -1,12 +1,12 @@
 """
-This examples demonstrates base usage of this library. A CookieBackend is used.
+This examples demonstrates base usage of this library. A CookieStore is used.
 
 Required dependencies: python-multipart
 
 Usage:
 > uvicorn examples.login:app
 
-Access localhost:8000/ to see a landing page
+Access http://localhost:8000/ to see a landing page
 """
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -14,7 +14,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 from starlette.routing import Route
 
-from starsessions import CookieStore, SessionMiddleware
+from starsessions import CookieStore, SessionAutoloadMiddleware, SessionMiddleware
 from starsessions.session import regenerate_session_id
 
 
@@ -67,5 +67,8 @@ routes = [
     Route("/logout", endpoint=logout, methods=['POST']),
     Route("/profile", endpoint=profile),
 ]
-middleware = [Middleware(SessionMiddleware, backend=CookieStore(secret_key="secret"), autoload=True)]
+middleware = [
+    Middleware(SessionMiddleware, store=CookieStore(secret_key="secret")),
+    Middleware(SessionAutoloadMiddleware),
+]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

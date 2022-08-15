@@ -1,25 +1,31 @@
 """
-This examples demonstrates base usage of this library. A CookieBackend is used.
+This examples demonstrates base usage of this library. A CookieStore is used.
 
 Usage:
 > uvicorn examples.app:app
 
-Access localhost:8000/set to set test session data, and
-access localhost:8000/clean to clear session data
+Open http://localhost:8000 for management panela
 """
 import datetime
+import json
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import HTMLResponse, RedirectResponse
 from starlette.routing import Route
 
-from starsessions import CookieStore, SessionMiddleware
+from starsessions import CookieStore, SessionAutoloadMiddleware, SessionMiddleware
 
 
-async def homepage(request: Request) -> JSONResponse:
+async def homepage(request: Request) -> HTMLResponse:
     """Access this view (GET "/") to display session contents."""
-    return JSONResponse(dict(request.session))
+    return HTMLResponse(
+        f'<div>session data: {json.dumps(request.session)}</div>'
+        '<ol>'
+        '<li><a href="/set">set example data</a></li>'
+        '<li><a href="/clean">clear example data</a></li>'
+        '</ol>'
+    )
 
 
 async def set_time(request: Request) -> RedirectResponse:
@@ -39,5 +45,8 @@ routes = [
     Route("/set", endpoint=set_time),
     Route("/clean", endpoint=clean),
 ]
-middleware = [Middleware(SessionMiddleware, backend=CookieStore(secret_key='key'), autoload=True)]
+middleware = [
+    Middleware(SessionMiddleware, store=CookieStore(secret_key='key')),
+    Middleware(SessionAutoloadMiddleware),
+]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

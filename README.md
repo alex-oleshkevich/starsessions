@@ -28,7 +28,7 @@ See example application in [`examples/`](examples) directory of this repository.
 ## Usage
 
 1. Add `starsessions.SessionMiddleware` to your application to enable session support,
-2. Configure session backend and pass it to the middleware,
+2. Configure session store and pass it to the middleware,
 3. Load session in your view using `load_session` utility.
 
 ```python
@@ -52,7 +52,7 @@ session_store = CookieStore(secret_key='TOP SECRET')
 
 app = Starlette(
     middleware=[
-        Middleware(SessionMiddleware, backend=session_store, max_age=session_lifetime),
+        Middleware(SessionMiddleware, store=session_store, max_age=session_lifetime),
     ],
     routes=[
         Route('/', index_view),
@@ -74,7 +74,7 @@ from starsessions import CookieStore, SessionMiddleware
 session_store = CookieStore(secret_key='TOP SECRET')
 
 middleware = [
-    Middleware(SessionMiddleware, backend=session_store, https_only=False, max_age=3600 * 24 * 14),
+    Middleware(SessionMiddleware, store=session_store, https_only=False, max_age=3600 * 24 * 14),
 ]
 ```
 
@@ -100,14 +100,14 @@ session_store = CookieStore(secret_key='TOP SECRET')
 # Autoload session for every request
 
 middleware = [
-    Middleware(SessionMiddleware, backend=session_store),
+    Middleware(SessionMiddleware, store=session_store),
     Middleware(SessionAutoloadMiddleware),
 ]
 
 # Autoload session for selected paths
 
 middleware = [
-    Middleware(SessionMiddleware, backend=session_store),
+    Middleware(SessionMiddleware, store=session_store),
     Middleware(SessionAutoloadMiddleware, paths=['/admin', '/app']),
 ]
 
@@ -117,7 +117,7 @@ import re
 admin_rx = re.compile('/admin*')
 
 middleware = [
-    Middleware(SessionMiddleware, backend=session_store),
+    Middleware(SessionMiddleware, store=session_store),
     Middleware(SessionAutoloadMiddleware, paths=[admin_rx]),
 ]
 ```
@@ -169,55 +169,55 @@ middleware = [
 ]
 ```
 
-## Built-in backends
+## Built-in stores
 
 ### Memory
 
-Class: `starsessions.InMemoryBackend`
+Class: `starsessions.InMemoryStore`
 
 Simply stores data in memory. The data is cleared after server restart. Mostly for use with unit tests.
 
-### CookieBackend
+### CookieStore
 
-Class: `starsessions.CookieBackend`
+Class: `starsessions.CookieStore`
 
 Stores session data in a signed cookie on the client.
 
 ### Redis
 
-Class: `starsessions.backends.redis.RedisBackend`
+Class: `starsessions.stores.redis.RedisStore`
 
 > Requires [aioredis](https://aioredis.readthedocs.io/en/latest/getting-started/),
 > use `pip install starsessions[redis]` or `poetry add starsessions[redis]`
 
-Stores session data in a Redis server. The backend accepts either connection URL or an instance of `aioredis.Redis`.
+Stores session data in a Redis server. The store accepts either connection URL or an instance of `aioredis.Redis`.
 
 ```python
 import aioredis
 
 from starsessions.stores.redis import RedisStore
 
-backend = RedisStore('redis://localhost')
+store = RedisStore('redis://localhost')
 # or
 redis = aioredis.from_url('redis://localhost')
 
-backend = RedisStore(connection=redis)
+store = RedisStore(connection=redis)
 ```
 
 #### Redis key expiry
 
-The backend will use `max_age` to set key expiration TTL.
+The store will use `max_age` to set key expiration TTL.
 
 It's important to note that on every session write, the Redis expiry resets.
 For example, if you set the Redis expire time for 10 seconds, and you perform another write to the session
 in those 10 seconds, the expiry will be extended by 10 seconds.
 
-## Custom backend
+## Custom store
 
-Creating new backends is quite simple. All you need is to extend `starsessions.SessionBackend`
+Creating new stores is quite simple. All you need is to extend `starsessions.SessionStore`
 class and implement abstract methods.
 
-Here is an example of how we can create a memory-based session backend. Note, it is important that `write` method
+Here is an example of how we can create a memory-based session store. Note, it is important that `write` method
 returns session ID as a string value.
 
 ```python
@@ -228,7 +228,7 @@ from starsessions import SessionStore
 
 # instance of class which manages session persistence
 
-class InMemoryBackend(SessionStore):
+class InMemoryStore(SessionStore):
     def __init__(self):
         self._storage = {}
 
@@ -251,10 +251,10 @@ class InMemoryBackend(SessionStore):
 
 ## Serializers
 
-Sometimes you cannot pass raw session data to the backend. The data must be serialized into something the backend can
+Sometimes you cannot pass raw session data to the store. The data must be serialized into something the store can
 handle.
 
-Some backends (like `RedisBackend`) optionally accept `serializer` argument that will be used to serialize and
+Some stores (like `RedisStore`) optionally accept `serializer` argument that will be used to serialize and
 deserialize session data. By default, we provide (and use) `starsessions.JsonSerializer` but you can implement your own
 by extending `starsessions.Serializer` class.
 
