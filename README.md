@@ -29,7 +29,7 @@ See example application in [`examples/`](examples) directory of this repository.
 
 1. Add `starsessions.SessionMiddleware` to your application to enable session support,
 2. Configure session store and pass it to the middleware,
-3. Load session in your view/middleware using `load_session` utility.
+3. Load session in your view/middleware by calling `load_session(connection)` utility.
 
 ```python
 from starlette.applications import Starlette
@@ -78,6 +78,25 @@ middleware = [
 ```
 
 The example above will let session usage over insecure HTTP transport and the session lifetime will be set to 14 days.
+
+### Loading session
+
+The session data is not loaded by default. Call `load_session` to load data from the store.
+
+```python
+async def index_view(request):
+    await load_session(request)
+    request.session['key'] = 'value'
+```
+
+However, if you try to access uninitialized session, `SessionNotLoaded` exception will be raised.
+
+```python
+async def index_view(request):
+    request.session['key'] = 'value'  # raises SessionNotLoaded
+```
+
+You can automatically load session by using `SessionAutoloadMiddleware` middleware.
 
 ### Session autoload
 

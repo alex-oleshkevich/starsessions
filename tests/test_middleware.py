@@ -134,20 +134,6 @@ def test_will_not_send_cookie_if_initially_empty_session_destroyed(store: Sessio
     assert "set-cookie" not in response.headers
 
 
-def test_will_not_send_cookie_if_session_was_not_loaded(store: SessionStore) -> None:
-    async def app(scope: Scope, receive: Receive, send: Send) -> None:
-        connection = HTTPConnection(scope, receive)
-
-        connection.session.clear()
-        response = Response("")
-        await response(scope, receive, send)
-
-    app = SessionMiddleware(app, store=store)
-    client = TestClient(app)
-    response = client.get("/", cookies={"session": "session_id"})
-    assert "set-cookie" not in response.headers
-
-
 def test_max_age_argument_set_in_cookie(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)

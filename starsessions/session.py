@@ -119,7 +119,7 @@ class SessionHandler:
         metadata.update({"last_access": time.time()})  # force update
         self.metadata = metadata  # type: ignore[assignment]
 
-        self.connection.session.clear()  # replace session contents to avoid mixing existing and new session data
+        self.connection.scope["session"] = {}
         self.connection.session.update(data)
 
         self.initially_empty = len(self.connection.session) == 0

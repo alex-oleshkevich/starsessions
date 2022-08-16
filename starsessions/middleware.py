@@ -4,9 +4,29 @@ from starlette.datastructures import MutableHeaders
 from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from starsessions import SessionNotLoaded
 from starsessions.serializers import JsonSerializer, Serializer
 from starsessions.session import SessionHandler, get_session_remaining_seconds, load_session
 from starsessions.stores import SessionStore
+
+
+class LoadGuard:
+    """A guard that protects access to uninitialized session data."""
+
+    def __getattribute__(self, item: str) -> typing.Any:
+        if item == "_raise":
+            return super().__getattribute__(item)
+
+        self._raise()
+
+    def __setitem__(self, key: str, value: typing.Any) -> typing.NoReturn:
+        self._raise()
+
+    def __getitem__(self, key: str) -> typing.NoReturn:
+        self._raise()
+
+    def _raise(self) -> typing.NoReturn:
+        raise SessionNotLoaded("Attempt to access session that has not yet been loaded.")
 
 
 class SessionMiddleware:
@@ -46,7 +66,7 @@ class SessionMiddleware:
         session_id = connection.cookies.get(self.cookie_name)
         handler = SessionHandler(connection, session_id, self.store, self.serializer, self.lifetime)
 
-        scope["session"] = {}
+        scope["session"] = LoadGuard()
         scope["session_handler"] = handler
 
         async def send_wrapper(message: Message) -> None:

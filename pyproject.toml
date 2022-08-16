@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "starsessions"
-version = "2.0.0-alpha.1"
+version = "2.0.0-alpha.2"
 description = "Advanced sessions for Starlette and FastAPI frameworks"
 authors = ["alex.oleshkevich <alex.oleshkevich@gmail.com>"]
 license = "MIT"
