@@ -62,7 +62,7 @@ app = Starlette(
 ### Cookie security
 
 By default, the middleware uses strict defaults.
-The cookie lifetime is limited to the browser session and send via HTTPS protocol only.
+The cookie lifetime is limited to the browser session and sent via HTTPS protocol only.
 You can change these defaults by changing `cookie_https_only` and `lifetime` arguments:
 
 ```python
@@ -229,7 +229,7 @@ store = RedisStore(connection=redis)
 
 #### Redis key prefix
 
-By default, all keys in Redis prefixed with `starsessions_`. If you want to change this use `prefix` argument.
+By default, all keys in Redis prefixed with `starsessions.`. If you want to change this use `prefix` argument.
 
 ```python
 from starsessions.stores.redis import RedisStore
