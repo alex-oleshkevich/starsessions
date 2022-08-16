@@ -26,7 +26,7 @@ class LoadGuard:
         self._raise()
 
     def _raise(self) -> typing.NoReturn:
-        raise SessionNotLoaded("Attempt to access session that has not yet been loaded.")
+        raise SessionNotLoaded("Attempt to access session that has not been loaded yet.")
 
 
 class SessionMiddleware:
