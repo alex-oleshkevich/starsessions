@@ -322,10 +322,10 @@ class InMemoryStore(SessionStore):
 ### lifetime and ttl
 
 The `write` accepts two special arguments: `lifetime` and `ttl`.
-The difference between then is that `lifetime` is a value of `lifetime` argument of the middleware
-and `ttl` tells after how many seconds the data can be deleted from the storage.
+The difference is that `lifetime` is a total session duration (set by the middleware)
+and `ttl` is a remaining session time. After `ttl` seconds the data can be safely deleted from the storage.
 
-Your custom backend has to correctly handle setups when `lifetime = 0`.
+> Your custom backend has to correctly handle setups when `lifetime = 0`.
 In such cases you don't have exact expiration value, and you have to find a way how to extend session TTL at the storage
 side, if any.
 
