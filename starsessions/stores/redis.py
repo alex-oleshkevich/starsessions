@@ -41,12 +41,18 @@ class RedisStore(SessionStore):
         self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
+        if session_id is None:
+            return b""
+
         value = await self._connection.get(self.prefix(session_id))
         if value is None:
             return b""
         return value  # type: ignore
 
     async def write(self, session_id: str, data: bytes, lifetime: int, ttl: int) -> str:
+        if session_id is None:
+            return ""
+
         if lifetime == 0:
             # Redis will fail for session-only cookies, as zero is not a valid expiry value.
             # We cannot know the final session duration so set here something close to reality.
@@ -58,8 +64,14 @@ class RedisStore(SessionStore):
         return session_id
 
     async def remove(self, session_id: str) -> None:
+        if session_id is None:
+            return
+
         await self._connection.delete(self.prefix(session_id))
 
     async def exists(self, session_id: str) -> bool:
+        if session_id is None:
+            return False
+
         result: int = await self._connection.exists(self.prefix(session_id))
         return result > 0
