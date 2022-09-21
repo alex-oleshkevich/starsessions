@@ -454,6 +454,14 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "types-redis"
+version = "4.3.20"
+description = "Typing stubs for redis"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "typing-extensions"
 version = "4.3.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
@@ -488,7 +496,7 @@ redis = []
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.0"
-content-hash = "3a08d94e9baab165a4509fed4e78bdb23cad56c1b25edd687d9bef986774e3b5"
+content-hash = "548dab78452a15c420583d290ac235c3d6797f598b812a33890c0da9253d24fa"
 
 [metadata.files]
 anyio = [
@@ -652,6 +660,7 @@ tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
     {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
 ]
+types-redis = []
 typing-extensions = [
     {file = "typing_extensions-4.3.0-py3-none-any.whl", hash = "sha256:25642c956049920a5aa49edcdd6ab1e06d7e5d467fc00e0506c44ac86fbfca02"},
     {file = "typing_extensions-4.3.0.tar.gz", hash = "sha256:e6d2677a32f47fc7eb2795db1dd15c1f34eff616bcaf2cfb5e997f854fa1c4a6"},

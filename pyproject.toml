@@ -38,6 +38,7 @@ flake8 = "^5.0.4"
 mypy = "^0.971"
 fastapi = "^0.79.0"
 redis = ">=4.2.0rc1"
+types-redis = "^4.3.20"
 
 [tool.poetry.extras]
 redis = ["aioredis"]
