@@ -229,19 +229,19 @@ Stores session data in a signed cookie on the client.
 
 Class: `starsessions.stores.redis.RedisStore`
 
-Stores session data in a Redis server. The store accepts either connection URL or an instance of `aioredis.Redis`.
+Stores session data in a Redis server. The store accepts either connection URL or an instance of `Redis`.
 
-> Requires [aioredis](https://aioredis.readthedocs.io/en/latest/getting-started/),
+> Requires [redis-py](https://github.com/redis/redis-py),
 > use `pip install starsessions[redis]` or `poetry add starsessions[redis]`
 
 ```python
-import aioredis
+from redis.asyncio.utils import from_url
 
-from starsessions.stores.redis import RedisStore
+from starsessions.stores.redis_store import RedisStore
 
 store = RedisStore('redis://localhost')
 # or
-redis = aioredis.from_url('redis://localhost')
+redis = from_url('redis://localhost')
 
 store = RedisStore(connection=redis)
 ```
@@ -251,7 +251,7 @@ store = RedisStore(connection=redis)
 By default, all keys in Redis prefixed with `starsessions.`. If you want to change this use `prefix` argument.
 
 ```python
-from starsessions.stores.redis import RedisStore
+from starsessions.stores.redis_store import RedisStore
 
 store = RedisStore(url='redis://localhost', prefix='my_sessions')
 ```
@@ -259,7 +259,7 @@ store = RedisStore(url='redis://localhost', prefix='my_sessions')
 Prefix can be a callable:
 
 ```python
-from starsessions.stores.redis import RedisStore
+from starsessions.stores.redis_store import RedisStore
 
 
 def make_prefix(key: str) -> str:
@@ -277,7 +277,7 @@ otherwise the data will remain in Redis forever. At this moment, we just set 30 
 setting `gc_ttl` value on the store.
 
 ```python
-from starsessions.stores.redis import RedisStore
+from starsessions.stores.redis_store import RedisStore
 
 store = RedisStore(url='redis://localhost', gc_ttl=3600)  # max 1 hour
 ```
