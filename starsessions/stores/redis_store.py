@@ -1,6 +1,8 @@
-import aioredis
 import functools
 import typing
+
+from redis.asyncio.client import Redis
+from redis.asyncio.utils import from_url
 
 from starsessions.exceptions import ImproperlyConfigured
 from starsessions.stores.base import SessionStore
@@ -16,7 +18,7 @@ class RedisStore(SessionStore):
     def __init__(
         self,
         url: typing.Optional[str] = None,
-        connection: typing.Optional[aioredis.Redis] = None,
+        connection: typing.Optional[Redis] = None,
         prefix: typing.Union[typing.Callable[[str], str], str] = "starsessions.",
         gc_ttl: int = 3600 * 24 * 30,
     ) -> None:
@@ -38,7 +40,7 @@ class RedisStore(SessionStore):
 
         self.gc_ttl = gc_ttl
         self.prefix: typing.Callable[[str], str] = prefix
-        self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
+        self._connection: Redis = connection or from_url(url)  # type: ignore[no-untyped-call]
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
         value = await self._connection.get(self.prefix(session_id))
