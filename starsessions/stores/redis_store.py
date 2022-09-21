@@ -48,7 +48,7 @@ class RedisStore(SessionStore):
         self.prefix: typing.Callable[[str], str] = prefix
         if connection:
             self._connection: BaseRedis = connection
-        elif url:
+        else:
             self._connection = from_url(url)
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
