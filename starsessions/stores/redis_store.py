@@ -49,6 +49,7 @@ class RedisStore(SessionStore):
         if connection:
             self._connection: BaseRedis = connection
         else:
+            assert url
             self._connection = from_url(url)
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
