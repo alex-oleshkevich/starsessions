@@ -237,7 +237,7 @@ Stores session data in a Redis server. The store accepts either connection URL o
 ```python
 from redis.asyncio.utils import from_url
 
-from starsessions.stores.redis_store import RedisStore
+from starsessions.stores.redis import RedisStore
 
 store = RedisStore('redis://localhost')
 # or
@@ -251,7 +251,7 @@ store = RedisStore(connection=redis)
 By default, all keys in Redis prefixed with `starsessions.`. If you want to change this use `prefix` argument.
 
 ```python
-from starsessions.stores.redis_store import RedisStore
+from starsessions.stores.redis import RedisStore
 
 store = RedisStore(url='redis://localhost', prefix='my_sessions')
 ```
@@ -259,7 +259,7 @@ store = RedisStore(url='redis://localhost', prefix='my_sessions')
 Prefix can be a callable:
 
 ```python
-from starsessions.stores.redis_store import RedisStore
+from starsessions.stores.redis import RedisStore
 
 
 def make_prefix(key: str) -> str:
@@ -277,7 +277,7 @@ otherwise the data will remain in Redis forever. At this moment, we just set 30 
 setting `gc_ttl` value on the store.
 
 ```python
-from starsessions.stores.redis_store import RedisStore
+from starsessions.stores.redis import RedisStore
 
 store = RedisStore(url='redis://localhost', gc_ttl=3600)  # max 1 hour
 ```

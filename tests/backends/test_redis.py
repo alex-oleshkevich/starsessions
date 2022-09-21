@@ -3,7 +3,7 @@ import pytest
 from pytest_asyncio.plugin import SubRequest
 
 from starsessions.stores.base import SessionStore
-from starsessions.stores.redis_store import RedisStore
+from starsessions.stores.redis import RedisStore
 
 
 def redis_key_callable(session_id: str) -> str:
