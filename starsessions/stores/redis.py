@@ -1,6 +1,8 @@
-import aioredis
 import functools
 import typing
+
+from redis.asyncio.client import Redis
+from redis.asyncio.utils import from_url
 
 from starsessions.exceptions import ImproperlyConfigured
 from starsessions.stores.base import SessionStore
@@ -10,13 +12,19 @@ def prefix_factory(prefix: str, key: str) -> str:
     return prefix + key
 
 
+if typing.TYPE_CHECKING:
+    BaseRedis = Redis[bytes]
+else:
+    BaseRedis = Redis
+
+
 class RedisStore(SessionStore):
     """Stores session data in a Redis server."""
 
     def __init__(
         self,
         url: typing.Optional[str] = None,
-        connection: typing.Optional[aioredis.Redis] = None,
+        connection: typing.Optional[BaseRedis] = None,
         prefix: typing.Union[typing.Callable[[str], str], str] = "starsessions.",
         gc_ttl: int = 3600 * 24 * 30,
     ) -> None:
@@ -38,13 +46,17 @@ class RedisStore(SessionStore):
 
         self.gc_ttl = gc_ttl
         self.prefix: typing.Callable[[str], str] = prefix
-        self._connection: aioredis.Redis = connection or aioredis.from_url(url)  # type: ignore[no-untyped-call]
+        if connection:
+            self._connection: BaseRedis = connection
+        else:
+            assert url
+            self._connection = from_url(url)
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
         value = await self._connection.get(self.prefix(session_id))
         if value is None:
             return b""
-        return value  # type: ignore
+        return value
 
     async def write(self, session_id: str, data: bytes, lifetime: int, ttl: int) -> str:
         if lifetime == 0:

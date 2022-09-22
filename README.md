@@ -229,19 +229,19 @@ Stores session data in a signed cookie on the client.
 
 Class: `starsessions.stores.redis.RedisStore`
 
-Stores session data in a Redis server. The store accepts either connection URL or an instance of `aioredis.Redis`.
+Stores session data in a Redis server. The store accepts either connection URL or an instance of `Redis`.
 
-> Requires [aioredis](https://aioredis.readthedocs.io/en/latest/getting-started/),
+> Requires [redis-py](https://github.com/redis/redis-py),
 > use `pip install starsessions[redis]` or `poetry add starsessions[redis]`
 
 ```python
-import aioredis
+from redis.asyncio.utils import from_url
 
 from starsessions.stores.redis import RedisStore
 
 store = RedisStore('redis://localhost')
 # or
-redis = aioredis.from_url('redis://localhost')
+redis = from_url('redis://localhost')
 
 store = RedisStore(connection=redis)
 ```
