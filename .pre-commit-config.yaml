@@ -45,7 +45,8 @@ repos:
                 pass_filenames: false
                 additional_dependencies:
                     - pytest-asyncio
-                    - aioredis
+                    - redis
+                    - types-redis
                     - itsdangerous
                     - fastapi
                 args: [ --config-file=pyproject.toml ]
