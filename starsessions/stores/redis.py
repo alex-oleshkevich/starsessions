@@ -1,6 +1,5 @@
 import functools
 import typing
-
 from redis.asyncio.client import Redis
 from redis.asyncio.utils import from_url
 
