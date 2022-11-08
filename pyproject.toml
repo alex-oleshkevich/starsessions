@@ -28,7 +28,7 @@ starlette = "^0"
 itsdangerous = "^2.0.1"
 redis = {version = ">=4.2.0rc1", optional = true}
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
 black = "^22.10.0"
 pytest-asyncio = "^0.19.0"
