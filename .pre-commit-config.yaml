@@ -22,14 +22,11 @@ repos:
         rev: 5.10.1
         hooks:
             -   id: isort
-                name: isort (python)
-                args: [ --settings-path=pyproject.toml ]
 
     -   repo: https://github.com/psf/black.git
         rev: 22.10.0
         hooks:
             -   id: black
-                language_version: python3.10
                 args: [ --config=pyproject.toml ]
 
     -   repo: https://github.com/pycqa/flake8
@@ -41,25 +38,15 @@ repos:
         rev: 'v0.990'
         hooks:
             -   id: mypy
-                always_run: true
-                pass_filenames: false
                 additional_dependencies:
                     - pytest-asyncio
                     - redis
                     - types-redis
                     - itsdangerous
                     - fastapi
-                args: [ --config-file=pyproject.toml ]
 
     -   repo: https://github.com/myint/docformatter.git
         rev: v1.5.0
         hooks:
             -   id: docformatter
                 args: [ '--in-place', '--wrap-summaries=120', '--wrap-descriptions=120', '--pre-summary-newline' ]
-
-    -   repo: local
-        hooks:
-            -   id: pytest
-                name: pytest
-                entry: bash -c 'pytest'
-                language: system
