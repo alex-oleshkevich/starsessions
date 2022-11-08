@@ -29,11 +29,11 @@ itsdangerous = "^2.0.1"
 redis = {version = ">=4.2.0rc1", optional = true}
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.1.2"
+pytest = "^7.2"
 black = "^22.10.0"
 pytest-asyncio = "^0.19.0"
 requests = "^2.25.1"
-pytest-coverage = "^0.0"
+pytest-cov = "^4.0"
 flake8 = "^5.0.4"
 mypy = "^0.990"
 fastapi = "^0.79.0"
@@ -85,8 +85,8 @@ show_error_codes = true
 warn_unused_configs = true
 
 [tool.pytest.ini_options]
-minversion = "6.0"
+minversion = "7.2"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 norecursedirs = [".git", ".venv"]
-addopts = "--tb=short -s"
+addopts = "--tb=short -s --no-cov-on-fail"
 testpaths = ["tests"]
