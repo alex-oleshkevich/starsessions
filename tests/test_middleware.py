@@ -1,5 +1,4 @@
 import datetime
-
 import pytest
 from starlette.requests import HTTPConnection
 from starlette.responses import JSONResponse, Response
@@ -239,9 +238,7 @@ def test_session_only_cookies(store: SessionStore) -> None:
 
 
 def test_session_timedelta_lifetime(store: SessionStore) -> None:
-    """
-    It should accept datetime.timedelta as lifetime value.
-    """
+    """It should accept datetime.timedelta as lifetime value."""
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         pass
