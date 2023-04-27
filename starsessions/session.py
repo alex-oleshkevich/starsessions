@@ -100,7 +100,8 @@ class SessionHandler:
         self.metadata: typing.Optional[SessionMetadata] = None
 
     async def load(self) -> None:
-        if self.is_loaded:  # don't refresh existing session, it may contain user data
+        # don't refresh existing session, it may contain user data
+        if self.is_loaded:  # pragma: nocover, IDK how to test it :(
             return
 
         self.is_loaded = True

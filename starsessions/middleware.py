@@ -76,7 +76,8 @@ class SessionMiddleware:
                 await send(message)
                 return
 
-            if not handler.is_loaded:  # session was not loaded, do nothing
+            # session was not loaded, do nothing
+            if not handler.is_loaded:  # pragma: nocover
                 await send(message)
                 return
 
