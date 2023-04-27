@@ -240,7 +240,7 @@ def test_session_only_cookies(store: SessionStore) -> None:
 def test_session_timedelta_lifetime(store: SessionStore) -> None:
     """It should accept datetime.timedelta as lifetime value."""
 
-    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:  # pragma: nocover
         pass
 
     app = SessionMiddleware(app, store=store, lifetime=datetime.timedelta(seconds=60))
