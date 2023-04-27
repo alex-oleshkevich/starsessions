@@ -11,7 +11,7 @@ def prefix_factory(prefix: str, key: str) -> str:
     return prefix + key
 
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     BaseRedis = Redis[bytes]
 else:
     BaseRedis = Redis

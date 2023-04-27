@@ -1,7 +1,9 @@
 import os
 import pytest
+import redis.asyncio
 from pytest_asyncio.plugin import SubRequest
 
+from starsessions import ImproperlyConfigured
 from starsessions.stores.base import SessionStore
 from starsessions.stores.redis import RedisStore
 
@@ -46,3 +48,22 @@ async def test_redis_exists(redis_store: SessionStore) -> None:
 @pytest.mark.asyncio
 async def test_redis_empty_session(redis_store: SessionStore) -> None:
     assert await redis_store.read("unknown_session_id", lifetime=60) == b""
+
+
+@pytest.mark.asyncio
+async def test_redis_requires_url_or_connection() -> None:
+    with pytest.raises(ImproperlyConfigured):
+        RedisStore()
+
+
+@pytest.mark.asyncio
+async def test_redis_uses_url() -> None:
+    store = RedisStore(url="redis://")
+    assert isinstance(store._connection, redis.asyncio.Redis)
+
+
+@pytest.mark.asyncio
+async def test_redis_uses_connection() -> None:
+    connection = redis.asyncio.Redis.from_url("redis://")
+    store = RedisStore(connection=connection)
+    assert store._connection == connection

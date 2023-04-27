@@ -11,7 +11,7 @@ from starsessions.session import get_session_metadata, load_session
 
 
 def test_requires_loaded_session(store: SessionStore) -> None:
-    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:  # pragma: nocover
         connection = HTTPConnection(scope, receive)
         response = JSONResponse(get_session_metadata(connection))
         await response(scope, receive, send)
