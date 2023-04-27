@@ -1,3 +1,4 @@
+import datetime
 import re
 import typing
 from starlette.datastructures import MutableHeaders
@@ -34,7 +35,7 @@ class SessionMiddleware:
         self,
         app: ASGIApp,
         store: SessionStore,
-        lifetime: int = 0,  # session-only
+        lifetime: typing.Union[int, datetime.timedelta] = 0,  # session-only
         rolling: bool = False,
         cookie_name: str = "session",
         cookie_same_site: str = "lax",
@@ -43,6 +44,7 @@ class SessionMiddleware:
         cookie_path: typing.Optional[str] = None,
         serializer: typing.Optional[Serializer] = None,
     ) -> None:
+        lifetime = int(lifetime.total_seconds() if isinstance(lifetime, datetime.timedelta) else lifetime)
         assert lifetime >= 0, "Session lifetime cannot be less than zero seconds."
 
         self.app = app

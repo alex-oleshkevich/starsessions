@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from starlette.requests import HTTPConnection
 from starlette.responses import JSONResponse, Response
@@ -234,3 +236,15 @@ def test_session_only_cookies(store: SessionStore) -> None:
     client = TestClient(app)
     response = client.get("/")
     assert "max-age" not in response.headers["set-cookie"].lower()
+
+
+def test_session_timedelta_lifetime(store: SessionStore) -> None:
+    """
+    It should accept datetime.timedelta as lifetime value.
+    """
+
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        pass
+
+    app = SessionMiddleware(app, store=store, lifetime=datetime.timedelta(seconds=60))
+    assert app.lifetime == 60
