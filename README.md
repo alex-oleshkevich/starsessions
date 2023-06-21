@@ -3,7 +3,7 @@
 Advanced sessions for Starlette and FastAPI frameworks
 
 ![PyPI](https://img.shields.io/pypi/v/starsessions)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/alex-oleshkevich/starsessions/Lint%20and%20test)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/alex-oleshkevich/starsessions/lint_and_test.yml?branch=master)
 ![GitHub](https://img.shields.io/github/license/alex-oleshkevich/starsessions)
 ![Libraries.io dependency status for latest release](https://img.shields.io/librariesio/release/pypi/starsessions)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/starsessions)
