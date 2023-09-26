@@ -103,7 +103,7 @@ class SessionMiddleware:
                     if self.cookie_domain:
                         header_parts.append(f"domain={self.cookie_domain}")
                     header_value = "; ".join(header_parts)
-                    headers.append("Set-Cookie", header_parts)
+                    headers.append("Set-Cookie", header_value)
                     await handler.destroy()
                 await send(message)
                 return
