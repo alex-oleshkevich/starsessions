@@ -102,6 +102,25 @@ def test_send_cookie_if_session_destroyed(store: SessionStore) -> None:
     assert "01 Jan 1970 00:00:00 GMT" in response.headers.get("set-cookie")
 
 
+def test_send_cookie_with_domain_if_session_destroyed_and_domain_set(store: SessionStore) -> None:
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+
+        await store.write("session_id", b'{"key2": "value2"}', lifetime=60, ttl=60)
+        await load_session(connection)
+
+        connection.session.clear()
+        response = Response("")
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, store=store, cookie_domain="example.com")
+    client = TestClient(app)
+    response = client.get("/", cookies={"session": "session_id"})
+    assert "session" in response.headers.get("set-cookie")
+    assert "01 Jan 1970 00:00:00 GMT" in response.headers.get("set-cookie")
+    assert "domain=example.com" in response.headers["set-cookie"].lower()
+
+
 @pytest.mark.asyncio
 async def test_will_clear_storage_if_session_destroyed(store: SessionStore) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
