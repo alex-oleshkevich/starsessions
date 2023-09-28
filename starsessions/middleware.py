@@ -94,11 +94,15 @@ class SessionMiddleware:
                 # we have to remove the cookie and clear the storage
                 if not self.cookie_path or self.cookie_path and scope["path"].startswith(self.cookie_path):
                     headers = MutableHeaders(scope=message)
-                    header_value = "{}={}; {}".format(
-                        self.cookie_name,
-                        f"null; path={path}; expires=Thu, 01 Jan 1970 00:00:00 GMT;",
+                    header_parts = [
+                        f"{self.cookie_name}=''",
+                        f"path={path}",
+                        "expires=Thu, 01 Jan 1970 00:00:00 GMT",
                         self.security_flags,
-                    )
+                    ]
+                    if self.cookie_domain:
+                        header_parts.append(f"domain={self.cookie_domain}")
+                    header_value = "; ".join(header_parts)
                     headers.append("Set-Cookie", header_value)
                     await handler.destroy()
                 await send(message)
