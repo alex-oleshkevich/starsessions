@@ -24,9 +24,7 @@ Creating an issue is the simplest form of contributing to a project. But there a
 If you'd like to learn more about contributing in general, the [Guide to Idiomatic Contributing](https://github.com/jonschlinkert/idiomatic-contributing) has a lot of useful information.
 
 
-## Coding
-
-### Code style
+## Code style
 
 This project users [pre-commit](https://pre-commit.com/) tool to enforce code style. 
 You should run it before submitting a pull request. Otherwise, the GitHub action for your PR will fail.
@@ -37,6 +35,16 @@ Enable pre-commit:
 pre-commit install
 ```
 Since now every commit will be style-checked.
+
+
+## Releases
+
+The project use GitHub action to release the library. However, some steps to be performed on the developer's machine.
+
+- edit `pyproject.toml` and bump the version
+- commit version change
+- assign git tag to the repo, it must be the same as in the `pyproject.toml`: `git tag v1.0.0`
+- push changes and tag: `git push && git push --tags`
 
 ## Issues
 
