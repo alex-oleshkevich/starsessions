@@ -24,6 +24,20 @@ Creating an issue is the simplest form of contributing to a project. But there a
 If you'd like to learn more about contributing in general, the [Guide to Idiomatic Contributing](https://github.com/jonschlinkert/idiomatic-contributing) has a lot of useful information.
 
 
+## Coding
+
+### Code style
+
+This project users [pre-commit](https://pre-commit.com/) tool to enforce code style. 
+You should run it before submitting a pull request. Otherwise, the GitHub action for your PR will fail.
+
+Enable pre-commit:
+```shell
+# enable pre-commit for the repo
+pre-commit install
+```
+Since now every commit will be style-checked.
+
 ## Issues
 
 ### Before creating an issue
