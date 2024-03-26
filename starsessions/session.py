@@ -72,7 +72,10 @@ def get_session_remaining_seconds(connection: HTTPConnection) -> int:
     """Get total seconds remaining before this session expires."""
     now = time.time()
     metadata = get_session_metadata(connection)
-    return int((metadata["created"] + metadata["lifetime"]) - now)
+    # use "last_update" if rolling session, otherwise use "created"
+    rolling = metadata.get("rolling", False)
+    last_update = metadata["last_update"] if rolling and "last_update" in metadata else metadata["created"]
+    return int((last_update + metadata["lifetime"]) - now)
 
 
 class SessionHandler:
@@ -86,12 +89,14 @@ class SessionHandler:
         self,
         connection: HTTPConnection,
         session_id: typing.Optional[str],
+        rolling: bool,
         store: SessionStore,
         serializer: Serializer,
         lifetime: int,
     ) -> None:
         self.connection = connection
         self.session_id = session_id
+        self.rolling = rolling
         self.store = store
         self.serializer = serializer
         self.is_loaded = False
@@ -115,7 +120,12 @@ class SessionHandler:
             )
 
         # read and merge metadata
-        metadata = {"lifetime": self.lifetime, "created": time.time(), "last_access": time.time()}
+        metadata = {
+            "lifetime": self.lifetime,
+            "created": time.time(),
+            "last_access": time.time(),
+            "rolling": self.rolling,
+        }
         metadata.update(data.pop("__metadata__", {}))
         metadata.update({"last_access": time.time()})  # force update
         self.metadata = metadata  # type: ignore[assignment]
@@ -126,6 +136,8 @@ class SessionHandler:
         self.initially_empty = len(self.connection.session) == 0
 
     async def save(self, remaining_time: int) -> str:
+        if self.rolling and self.metadata:
+            self.metadata["last_update"] = time.time()
         self.connection.session.update({"__metadata__": self.metadata})
 
         self.session_id = await self.store.write(

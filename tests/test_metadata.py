@@ -37,6 +37,7 @@ def test_load_should_create_new_metadata(store: SessionStore) -> None:
             "created": 1660556520,
             "last_access": 1660556520,
             "lifetime": 1209600,
+            "rolling": False,
         }
 
 
@@ -59,6 +60,7 @@ def test_load_should_not_overwrite_created_timestamp(store: SessionStore) -> Non
             "created": 42,
             "last_access": 1660556520,
             "lifetime": 0,
+            "rolling": False,
         }
 
 
@@ -79,6 +81,7 @@ def test_should_update_last_access_time_on_load(store: SessionStore) -> None:
             "created": 1660556520,
             "last_access": 1660556520,
             "lifetime": 1209600,
+            "rolling": False,
         }
 
     with mock.patch("time.time", lambda: 1660556000):
@@ -86,4 +89,5 @@ def test_should_update_last_access_time_on_load(store: SessionStore) -> None:
             "created": 1660556520,
             "last_access": 1660556000,
             "lifetime": 1209600,
+            "rolling": False,
         }
