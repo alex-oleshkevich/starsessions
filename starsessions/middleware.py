@@ -66,7 +66,7 @@ class SessionMiddleware:
 
         connection = HTTPConnection(scope)
         session_id = connection.cookies.get(self.cookie_name)
-        handler = SessionHandler(connection, session_id, self.store, self.serializer, self.lifetime)
+        handler = SessionHandler(connection, session_id, self.rolling, self.store, self.serializer, self.lifetime)
 
         scope["session"] = LoadGuard()
         scope["session_handler"] = handler
