@@ -1,7 +1,7 @@
 import os
 import pytest
 import redis.asyncio
-from pytest_asyncio.plugin import SubRequest
+from pytest import FixtureRequest
 
 from starsessions import ImproperlyConfigured
 from starsessions.stores.base import SessionStore
@@ -13,7 +13,7 @@ def redis_key_callable(session_id: str) -> str:
 
 
 @pytest.fixture(params=["prefix_", redis_key_callable], ids=["using string", "using redis_key_callable"])
-def redis_store(request: SubRequest) -> SessionStore:
+def redis_store(request: FixtureRequest) -> SessionStore:
     redis_key = request.param
     url = os.environ.get("REDIS_URL", "redis://localhost")
     return RedisStore(url, prefix=redis_key)
