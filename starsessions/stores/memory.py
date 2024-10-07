@@ -21,6 +21,3 @@ class InMemoryStore(SessionStore):
             del self.data[session_id]
         except KeyError:
             pass
-
-    async def exists(self, session_id: str) -> bool:
-        return session_id in self.data

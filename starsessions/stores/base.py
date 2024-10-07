@@ -40,13 +40,3 @@ class SessionStore(abc.ABC):  # pragma: no cover
         :param session_id: ID associated with session
         """
         raise NotImplementedError()
-
-    @abc.abstractmethod
-    async def exists(self, session_id: str) -> bool:
-        """
-        Test if storage contains session data for a given session_id.
-
-        :param session_id: ID associated with session
-        :returns bool: True if there is data in session store otherwise False.
-        """
-        raise NotImplementedError()

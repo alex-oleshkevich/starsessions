@@ -19,14 +19,7 @@ async def test_in_memory_read_write(in_memory_store: SessionStore) -> None:
 async def test_in_memory_remove(in_memory_store: SessionStore) -> None:
     await in_memory_store.write("session_id", b"data", lifetime=60, ttl=60)
     await in_memory_store.remove("session_id")
-    assert await in_memory_store.exists("session_id") is False
+    assert await in_memory_store.read("session_id", lifetime=60) == b""
 
     # should not fail on missing key
     await in_memory_store.remove("missing")
-
-
-@pytest.mark.asyncio
-async def test_in_memory_exists(in_memory_store: SessionStore) -> None:
-    await in_memory_store.write("session_id", b"data", lifetime=60, ttl=60)
-    assert await in_memory_store.exists("session_id") is True
-    assert await in_memory_store.exists("other id") is False

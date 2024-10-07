@@ -26,11 +26,6 @@ async def test_cookie_remove(cookie_store: SessionStore) -> None:
 
 
 @pytest.mark.asyncio
-async def test_cookie_exists(cookie_store: SessionStore) -> None:
-    assert await cookie_store.exists("session_id") is False
-
-
-@pytest.mark.asyncio
 async def test_returns_empty_string_for_bad_signature(cookie_store: SessionStore) -> None:
     # the session_id value is a signed session cookie value
     assert await cookie_store.read("session_id", lifetime=10) == b""

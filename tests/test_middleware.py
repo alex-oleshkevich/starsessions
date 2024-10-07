@@ -136,7 +136,7 @@ async def test_will_clear_storage_if_session_destroyed(store: SessionStore) -> N
     app = SessionMiddleware(app, store=store)
     client = TestClient(app)
     client.get("/", cookies={"session": "session_id"})
-    assert not await store.exists("session_id")
+    assert await store.read("session_id", lifetime=60) == b""
 
 
 def test_will_not_send_cookie_if_initially_empty_session_destroyed(store: SessionStore) -> None:

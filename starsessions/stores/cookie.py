@@ -34,6 +34,3 @@ class CookieStore(SessionStore):
 
     async def remove(self, session_id: str) -> None:
         """Session data stored on client side - no way to remove it."""
-
-    async def exists(self, session_id: str) -> bool:
-        return False
