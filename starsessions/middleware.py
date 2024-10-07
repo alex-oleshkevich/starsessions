@@ -90,8 +90,6 @@ class SessionMiddleware:
                     await send(message)
                     return
 
-                # session data loaded but empty, no matter whether it was initially empty or cleared
-                # we have to remove the cookie and clear the storage
                 if not self.cookie_path or self.cookie_path and scope["path"].startswith(self.cookie_path):
                     headers = MutableHeaders(scope=message)
                     header_parts = [
