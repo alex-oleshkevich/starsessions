@@ -6,7 +6,7 @@ default_stages: [ commit ]
 
 repos:
     -   repo: https://github.com/pre-commit/pre-commit-hooks
-        rev: v4.4.0
+        rev: v5.0.0
         hooks:
             -   id: check-yaml
             -   id: check-case-conflict
@@ -17,25 +17,15 @@ repos:
             -   id: end-of-file-fixer
                 exclude_types: [ svg ]
             -   id: check-yaml
-
-    -   repo: https://github.com/pycqa/isort
-        rev: 5.12.0
+    -   repo: https://github.com/astral-sh/ruff-pre-commit
+        rev: v0.6.9
         hooks:
-            -   id: isort
-
-    -   repo: https://github.com/psf/black.git
-        rev: 23.3.0
-        hooks:
-            -   id: black
-                args: [ --config=pyproject.toml ]
-
-    -   repo: https://github.com/pycqa/flake8
-        rev: 6.0.0
-        hooks:
-            -   id: flake8
+            -   id: ruff
+                args: [ --fix ]
+            -   id: ruff-format
 
     -   repo: https://github.com/pre-commit/mirrors-mypy
-        rev: 'v1.2.0'
+        rev: 'v1.11.2'
         hooks:
             -   id: mypy
                 additional_dependencies:
@@ -44,9 +34,3 @@ repos:
                     - types-redis
                     - itsdangerous
                     - fastapi
-
-    -   repo: https://github.com/myint/docformatter.git
-        rev: v1.6.4
-        hooks:
-            -   id: docformatter
-                args: [ '--in-place', '--wrap-summaries=120', '--wrap-descriptions=120', '--pre-summary-newline' ]

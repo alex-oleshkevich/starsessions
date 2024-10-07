@@ -38,7 +38,9 @@ class RedisStore(SessionStore):
         :param gc_ttl: TTL for sessions that have no expiration time
         """
         if not (url or connection):
-            raise ImproperlyConfigured("Either 'url' or 'connection' arguments must be provided.")
+            raise ImproperlyConfigured(
+                "Either 'url' or 'connection' arguments must be provided."
+            )
 
         if isinstance(prefix, str):
             prefix = functools.partial(prefix_factory, prefix)
@@ -52,10 +54,11 @@ class RedisStore(SessionStore):
             self._connection = from_url(url)
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
-        value = await self._connection.get(self.prefix(session_id))
-        if value is None:
-            return b""
-        return value
+        async with self._connection as client:
+            value = await client.get(self.prefix(session_id))
+            if value is None:
+                return b""
+            return value
 
     async def write(self, session_id: str, data: bytes, lifetime: int, ttl: int) -> str:
         if lifetime == 0:
@@ -65,12 +68,10 @@ class RedisStore(SessionStore):
             ttl = self.gc_ttl
 
         ttl = max(1, ttl)
-        await self._connection.set(self.prefix(session_id), data, ex=ttl)
+        async with self._connection as client:
+            await client.set(self.prefix(session_id), data, ex=ttl)
         return session_id
 
     async def remove(self, session_id: str) -> None:
-        await self._connection.delete(self.prefix(session_id))
-
-    async def exists(self, session_id: str) -> bool:
-        result: int = await self._connection.exists(self.prefix(session_id))
-        return result > 0
+        async with self._connection as client:
+            await client.delete(self.prefix(session_id))
