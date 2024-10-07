@@ -15,7 +15,9 @@ async def test_cookie_read_write(cookie_store: SessionStore) -> None:
 
 
 @pytest.mark.asyncio
-async def test_cookie_read_data_of_session_only_cookie(cookie_store: SessionStore) -> None:
+async def test_cookie_read_data_of_session_only_cookie(
+    cookie_store: SessionStore,
+) -> None:
     new_id = await cookie_store.write("session_id", b"some data", lifetime=0, ttl=0)
     assert await cookie_store.read(new_id, lifetime=0) == b"some data"
 
@@ -26,6 +28,8 @@ async def test_cookie_remove(cookie_store: SessionStore) -> None:
 
 
 @pytest.mark.asyncio
-async def test_returns_empty_string_for_bad_signature(cookie_store: SessionStore) -> None:
+async def test_returns_empty_string_for_bad_signature(
+    cookie_store: SessionStore,
+) -> None:
     # the session_id value is a signed session cookie value
     assert await cookie_store.read("session_id", lifetime=10) == b""

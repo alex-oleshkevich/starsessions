@@ -8,6 +8,7 @@ Usage:
 
 Open http://localhost:8000 for demo page.
 """
+
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.requests import Request
@@ -55,9 +56,7 @@ async def profile(request: Request) -> Response:
     <form method="post" action="/logout">
     <button type="submit">logout</button>
     </form>
-    """.format(
-            username=username
-        )
+    """.format(username=username)
     )
 
 
@@ -68,7 +67,11 @@ routes = [
     Route("/profile", endpoint=profile),
 ]
 middleware = [
-    Middleware(SessionMiddleware, store=CookieStore(secret_key="secret"), cookie_https_only=False),
+    Middleware(
+        SessionMiddleware,
+        store=CookieStore(secret_key="secret"),
+        cookie_https_only=False,
+    ),
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

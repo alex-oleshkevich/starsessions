@@ -7,7 +7,11 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from starsessions import SessionNotLoaded
 from starsessions.serializers import JsonSerializer, Serializer
-from starsessions.session import SessionHandler, get_session_remaining_seconds, load_session
+from starsessions.session import (
+    SessionHandler,
+    get_session_remaining_seconds,
+    load_session,
+)
 from starsessions.stores import SessionStore
 
 

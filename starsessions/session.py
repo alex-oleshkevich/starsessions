@@ -115,7 +115,11 @@ class SessionHandler:
             )
 
         # read and merge metadata
-        metadata = {"lifetime": self.lifetime, "created": time.time(), "last_access": time.time()}
+        metadata = {
+            "lifetime": self.lifetime,
+            "created": time.time(),
+            "last_access": time.time(),
+        }
         metadata.update(data.pop("__metadata__", {}))
         metadata.update({"last_access": time.time()})  # force update
         self.metadata = metadata  # type: ignore[assignment]

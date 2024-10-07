@@ -33,8 +33,8 @@ def test_handles_not_existing_session(store: SessionStore) -> None:
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
-    client = TestClient(app)
-    assert client.get("/", cookies={"session": "session_id"}).json() == {}
+    client = TestClient(app, cookies={"session": "session_id"})
+    assert client.get("/").json() == {}
 
 
 def test_loads_existing_session(store: SessionStore) -> None:
@@ -48,8 +48,8 @@ def test_loads_existing_session(store: SessionStore) -> None:
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
-    client = TestClient(app)
-    assert client.get("/", cookies={"session": "session_id"}).json() == {"key": "value"}
+    client = TestClient(app, cookies={"session": "session_id"})
+    assert client.get("/").json() == {"key": "value"}
 
 
 def test_send_cookie_if_session_created(store: SessionStore) -> None:
@@ -96,13 +96,15 @@ def test_send_cookie_if_session_destroyed(store: SessionStore) -> None:
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
-    client = TestClient(app)
-    response = client.get("/", cookies={"session": "session_id"})
+    client = TestClient(app, cookies={"session": "session_id"})
+    response = client.get("/")
     assert "session" in response.headers.get("set-cookie")
     assert "01 Jan 1970 00:00:00 GMT" in response.headers.get("set-cookie")
 
 
-def test_send_cookie_with_domain_if_session_destroyed_and_domain_set(store: SessionStore) -> None:
+def test_send_cookie_with_domain_if_session_destroyed_and_domain_set(
+    store: SessionStore,
+) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
 
@@ -114,8 +116,8 @@ def test_send_cookie_with_domain_if_session_destroyed_and_domain_set(store: Sess
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store, cookie_domain="example.com")
-    client = TestClient(app)
-    response = client.get("/", cookies={"session": "session_id"})
+    client = TestClient(app, cookies={"session": "session_id"})
+    response = client.get("/")
     assert "session" in response.headers.get("set-cookie")
     assert "01 Jan 1970 00:00:00 GMT" in response.headers.get("set-cookie")
     assert "domain=example.com" in response.headers["set-cookie"].lower()
@@ -134,12 +136,14 @@ async def test_will_clear_storage_if_session_destroyed(store: SessionStore) -> N
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
-    client = TestClient(app)
-    client.get("/", cookies={"session": "session_id"})
+    client = TestClient(app, cookies={"session": "session_id"})
+    client.get("/")
     assert await store.read("session_id", lifetime=60) == b""
 
 
-def test_will_not_send_cookie_if_initially_empty_session_destroyed(store: SessionStore) -> None:
+def test_will_not_send_cookie_if_initially_empty_session_destroyed(
+    store: SessionStore,
+) -> None:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         connection = HTTPConnection(scope, receive)
         await load_session(connection)
@@ -149,8 +153,8 @@ def test_will_not_send_cookie_if_initially_empty_session_destroyed(store: Sessio
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store)
-    client = TestClient(app)
-    response = client.get("/", cookies={"session": "session_id"})
+    client = TestClient(app, cookies={"session": "session_id"})
+    response = client.get("/")
     assert "set-cookie" not in response.headers
 
 

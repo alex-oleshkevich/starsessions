@@ -10,6 +10,7 @@ Usage:
 Access localhost:8000/set to set test session data, and
 access localhost:8000/clean to clear session data
 """
+
 import datetime
 import typing
 from fastapi import FastAPI

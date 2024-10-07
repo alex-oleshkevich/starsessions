@@ -21,19 +21,19 @@ async def test_expiring_session_must_not_extend_duration(store: SessionStore) ->
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store, lifetime=10, rolling=False)
-    client = TestClient(app)
+    client = TestClient(app, cookies={"session": "session_id"})
 
     current_time = time.time()
 
     # it must set max-age = 10
     with mock.patch("time.time", lambda: current_time):
-        response = client.get("/", cookies={"session": "session_id"})
-        first_max_age = next(cookie for cookie in response.cookies if cookie.name == "session").expires
+        response = client.get("/")
+        first_max_age = next(cookie for cookie in response.cookies.jar if cookie.name == "session").expires
 
     # it must set the same max-age as the first response
     with mock.patch("time.time", lambda: current_time + 2):
-        response = client.get("/", cookies={"session": "session_id"})
-        second_max_age = next(cookie for cookie in response.cookies if cookie.name == "session").expires
+        response = client.get("/")
+        second_max_age = next(cookie for cookie in response.cookies.jar if cookie.name == "session").expires
 
     # the expiry date must be the same for both responses
     assert second_max_age == first_max_age

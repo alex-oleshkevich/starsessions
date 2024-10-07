@@ -6,6 +6,7 @@ Usage:
 
 Open http://localhost:8000 for demo page.
 """
+
 import datetime
 import json
 from starlette.applications import Starlette
@@ -46,7 +47,12 @@ routes = [
     Route("/clean", endpoint=clean),
 ]
 middleware = [
-    Middleware(SessionMiddleware, store=CookieStore(secret_key="key"), cookie_https_only=False, lifetime=10),
+    Middleware(
+        SessionMiddleware,
+        store=CookieStore(secret_key="key"),
+        cookie_https_only=False,
+        lifetime=10,
+    ),
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)

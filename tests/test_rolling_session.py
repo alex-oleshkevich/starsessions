@@ -21,19 +21,19 @@ async def test_rolling_session_must_extend_duration(store: SessionStore) -> None
         await response(scope, receive, send)
 
     app = SessionMiddleware(app, store=store, lifetime=10, rolling=True)
-    client = TestClient(app)
+    client = TestClient(app, cookies={"session": "session_id"})
 
     current_time = time.time()
 
     # it must set max-age = 10
     with mock.patch("time.time", lambda: current_time):
-        response = client.get("/", cookies={"session": "session_id"})
-        first_max_age = next(cookie for cookie in response.cookies if cookie.name == "session").expires
+        response = client.get("/")
+        first_max_age = next(cookie for cookie in response.cookies.jar if cookie.name == "session").expires
 
     # it must set max-age = 10 regardless of any previous value
     with mock.patch("time.time", lambda: current_time + 2):
-        response = client.get("/", cookies={"session": "session_id"})
-        second_max_age = next(cookie for cookie in response.cookies if cookie.name == "session").expires
+        response = client.get("/")
+        second_max_age = next(cookie for cookie in response.cookies.jar if cookie.name == "session").expires
 
     # the expiration date of the second response must be larger
     assert second_max_age > first_max_age
