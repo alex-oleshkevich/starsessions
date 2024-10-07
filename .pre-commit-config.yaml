@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 
 exclude: 'docs|.git|.tox'
-default_stages: [ commit ]
+default_stages: [ pre-commit ]
 
 repos:
     -   repo: https://github.com/pre-commit/pre-commit-hooks
