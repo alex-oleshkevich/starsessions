@@ -38,9 +38,7 @@ class RedisStore(SessionStore):
         :param gc_ttl: TTL for sessions that have no expiration time
         """
         if not (url or connection):
-            raise ImproperlyConfigured(
-                "Either 'url' or 'connection' arguments must be provided."
-            )
+            raise ImproperlyConfigured("Either 'url' or 'connection' arguments must be provided.")
 
         if isinstance(prefix, str):
             prefix = functools.partial(prefix_factory, prefix)
