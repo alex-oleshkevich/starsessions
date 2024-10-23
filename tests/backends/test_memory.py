@@ -3,7 +3,7 @@ import pytest
 from starsessions.stores import InMemoryStore, SessionStore
 
 
-@pytest.fixture()
+@pytest.fixture
 def in_memory_store() -> SessionStore:
     return InMemoryStore()
 

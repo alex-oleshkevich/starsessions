@@ -2,65 +2,69 @@ import os
 import typing
 
 import pytest
-import redis.asyncio
+import redis.asyncio as redis
 
 from starsessions import ImproperlyConfigured
-from starsessions.stores.base import SessionStore
 from starsessions.stores.redis import RedisStore
+
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost")
 
 
 def redis_key_callable(session_id: str) -> str:
-    return f"this:is:a:redis:key:{session_id}"
+    return f"prefix_{session_id}"
 
 
-@pytest.fixture(
-    params=["prefix_", redis_key_callable],
-    ids=["using string", "using redis_key_callable"],
-)
-def redis_store(request: typing.Any) -> SessionStore:
-    redis_key = request.param
+@pytest.mark.parametrize("prefix", ["prefix_", redis_key_callable])
+async def test_redis_prefix(prefix: typing.Union[str, typing.Callable[[str], str]]) -> None:
     url = os.environ.get("REDIS_URL", "redis://localhost")
-    return RedisStore(url, prefix=redis_key)
+    client = redis.Redis.from_url(url)
+    redis_store = RedisStore(prefix=prefix, connection=client)
+    async with client:
+        new_id = await redis_store.write("session_id", b"data", lifetime=60, ttl=60)
+        assert new_id == "session_id"
+        assert await redis_store.read("session_id", lifetime=60) == b"data"
+        assert await client.get("prefix_session_id") == b"data"
 
 
-@pytest.mark.asyncio
-async def test_redis_read_write(redis_store: SessionStore) -> None:
-    new_id = await redis_store.write("session_id", b"data", lifetime=60, ttl=60)
-    assert new_id == "session_id"
-    assert await redis_store.read("session_id", lifetime=60) == b"data"
+async def test_redis_read_write() -> None:
+    client = redis.Redis.from_url(REDIS_URL)
+    redis_store = RedisStore(connection=client)
+    async with client:
+        new_id = await redis_store.write("session_id", b"data", lifetime=60, ttl=60)
+        assert new_id == "session_id"
+        assert await redis_store.read("session_id", lifetime=60) == b"data"
 
 
-@pytest.mark.asyncio
-async def test_redis_write_with_session_only_setup(redis_store: SessionStore) -> None:
-    await redis_store.write("session_id", b"data", lifetime=0, ttl=0)
+async def test_redis_write_with_session_only_setup() -> None:
+    client = redis.Redis.from_url(REDIS_URL)
+    redis_store = RedisStore(connection=client)
+    async with client:
+        await redis_store.write("session_id", b"data", lifetime=0, ttl=0)
 
 
-@pytest.mark.asyncio
-async def test_redis_remove(redis_store: SessionStore) -> None:
-    await redis_store.write("session_id", b"data", lifetime=60, ttl=60)
-    await redis_store.remove("session_id")
-    assert await redis_store.read("session_id", lifetime=60) == b""
+async def test_redis_remove() -> None:
+    client = redis.Redis.from_url(REDIS_URL)
+    redis_store = RedisStore(connection=client)
+    async with client:
+        await redis_store.write("session_id", b"data", lifetime=60, ttl=60)
+        await redis_store.remove("session_id")
+        assert await redis_store.read("session_id", lifetime=60) == b""
 
 
-@pytest.mark.asyncio
-async def test_redis_empty_session(redis_store: SessionStore) -> None:
-    assert await redis_store.read("unknown_session_id", lifetime=60) == b""
+async def test_redis_empty_session() -> None:
+    client = redis.Redis.from_url(REDIS_URL)
+    redis_store = RedisStore(connection=client)
+    async with client:
+        assert await redis_store.read("unknown_session_id", lifetime=60) == b""
 
 
-@pytest.mark.asyncio
 async def test_redis_requires_url_or_connection() -> None:
     with pytest.raises(ImproperlyConfigured):
         RedisStore()
 
 
-@pytest.mark.asyncio
 async def test_redis_uses_url() -> None:
-    store = RedisStore(url="redis://")
-    assert isinstance(store._connection, redis.asyncio.Redis)
-
-
-@pytest.mark.asyncio
-async def test_redis_uses_connection() -> None:
-    connection = redis.asyncio.Redis.from_url("redis://")
-    store = RedisStore(connection=connection)
-    assert store._connection == connection
+    with pytest.warns(DeprecationWarning):
+        store = RedisStore(url="redis://")
+        assert isinstance(store._connection, redis.Redis)
+        await store._connection.aclose()

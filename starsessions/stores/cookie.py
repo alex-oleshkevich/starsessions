@@ -1,5 +1,6 @@
 import typing
 from base64 import b64decode, b64encode
+
 from itsdangerous import BadSignature, TimestampSigner
 from starlette.datastructures import Secret
 

@@ -1,3 +1,5 @@
+from sqlite3 import connect
+
 ## Starsessions
 
 Advanced sessions for Starlette and FastAPI frameworks
@@ -11,12 +13,10 @@ Advanced sessions for Starlette and FastAPI frameworks
 
 ## Installation
 
-Install `starsessions` using PIP or poetry:
+Install `starsessions` package:
 
 ```bash
 pip install starsessions
-# or
-poetry add starsessions
 ```
 
 Use `redis` extra for [Redis support](#redis).
@@ -100,7 +100,8 @@ You can automatically load a session by using `SessionAutoloadMiddleware` middle
 
 ### Session autoload
 
-For performance reasons, the session is not autoloaded by default. Sometimes it is annoying to call `load_session` too often.
+For performance reasons, the session is not autoloaded by default. Sometimes it is annoying to call `load_session` too
+often.
 We provide `SessionAutoloadMiddleware` class to reduce the boilerplate code by autoloading the session for you.
 
 There are two options: always autoload or autoload for specific paths only.
@@ -148,7 +149,8 @@ When rolling sessions are activated, the cookie expiration time will be extended
 Let's see how it works for example. First, on the first response you create a new session with `lifetime=3600`,
 then the user does another request, and the session gets extended by another 3600 seconds, and so on.
 This approach is useful when you want to use short-timed sessions but don't want them to interrupt in the middle of
-the user's operation. With the rolling strategy, a session cookie will expire only after some period of the user's inactivity.
+the user's operation. With the rolling strategy, a session cookie will expire only after some period of the user's
+inactivity.
 
 To enable the rolling strategy set `rolling=True`.
 
@@ -166,7 +168,8 @@ inactivity, but will be automatically extended by another 5 minutes while the us
 
 ### Cookie path
 
-You can pass `cookie_path` argument to bind the session cookies to specific URLs. For example, to activate a session cookie
+You can pass `cookie_path` argument to bind the session cookies to specific URLs. For example, to activate a session
+cookie
 only for the admin area, use `cookie_path="/admin"` middleware argument.
 
 ```python
@@ -232,18 +235,25 @@ Class: `starsessions.stores.redis.RedisStore`
 Stores session data in a Redis server. The store accepts either a connection URL or an instance of `Redis`.
 
 > Requires [redis-py](https://github.com/redis/redis-py),
-> use `pip install starsessions[redis]` or `poetry add starsessions[redis]`
+> use `pip install starsessions[redis]`
+
+> Note, redis-py requires explicit disconnect of connection. The library does not handle it for you at the moment.
+> The recommended solution is to pass a Redis instance to the store and call `.close()` on application shutdown.
+> For example, you can close the connection using lifespan handler.
+> See more https://redis-py.readthedocs.io/en/latest/examples/asyncio_examples.html
 
 ```python
-from redis.asyncio.utils import from_url
+from redis.asyncio import Redis
 
 from starsessions.stores.redis import RedisStore
 
-store = RedisStore('redis://localhost')
-# or
-redis = from_url('redis://localhost')
+client = Redis.from_url('redis://localhost')
+store = RedisStore(connection=client)
 
-store = RedisStore(connection=redis)
+store = RedisStore(connection=client)
+
+# close connection on shutdown
+await client.close()
 ```
 
 #### Redis key prefix
@@ -326,8 +336,9 @@ The difference is that `lifetime` is the total session duration (set by the midd
 and `ttl` is the remaining session time. After `ttl` seconds the data can be safely deleted from the storage.
 
 > Your custom backend has to correctly handle cases when `lifetime = 0`.
-In such cases, you don't have an exact expiration value, and you would have to find a way to extend session TTL on the storage
-side, if any.
+> In such cases, you don't have an exact expiration value, and you would have to find a way to extend session TTL on the
+> storage
+> side, if any.
 
 ## Serializers
 
@@ -359,7 +370,8 @@ middleware = [
 
 ## Session termination
 
-The middleware will remove session data and cookies if the session has no data. Use `request.session.clear` to empty data.
+The middleware will remove session data and cookies if the session has no data. Use `request.session.clear` to empty
+data.
 
 ## Regenerating session ID
 
