@@ -51,12 +51,12 @@ async def profile(request: Request) -> Response:
         return RedirectResponse("/", 302)
 
     return HTMLResponse(
-        """
+        f"""
     <p>Hi, {username}!</p>
     <form method="post" action="/logout">
     <button type="submit">logout</button>
     </form>
-    """.format(username=username)
+    """
     )
 
 

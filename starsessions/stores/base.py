@@ -13,7 +13,7 @@ class SessionStore(abc.ABC):  # pragma: no cover
         :param lifetime: session lifetime duration
         :returns bytes: session data as bytes
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     async def write(self, session_id: str, data: bytes, lifetime: int, ttl: int) -> str:
@@ -30,7 +30,7 @@ class SessionStore(abc.ABC):  # pragma: no cover
         :param ttl: keep session data this amount of time, in seconds
         :returns str: session ID
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     async def remove(self, session_id: str) -> None:
@@ -39,4 +39,4 @@ class SessionStore(abc.ABC):  # pragma: no cover
 
         :param session_id: ID associated with session
         """
-        raise NotImplementedError()
+        raise NotImplementedError

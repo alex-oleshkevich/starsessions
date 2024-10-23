@@ -28,7 +28,7 @@ classifiers = [
 python = "^3.8.0"
 starlette = "*"
 itsdangerous = "^2"
-redis = {version = ">=4.2.0rc1", optional = true}
+redis = { version = ">=4.2.0rc1", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
@@ -48,7 +48,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.coverage.run]
 branch = true
-source = ["starlette_dispatch"]
+source = ["starsessions"]
 omit = ["tests/*", ".venv/*", ".git/*", "*/__main__.py", "examples"]
 
 [tool.coverage.report]

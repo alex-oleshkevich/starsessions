@@ -31,6 +31,5 @@ repos:
                 additional_dependencies:
                     - pytest-asyncio
                     - redis
-                    - types-redis
                     - itsdangerous
                     - fastapi

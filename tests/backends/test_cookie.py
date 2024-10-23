@@ -3,7 +3,7 @@ import pytest
 from starsessions.stores import CookieStore, SessionStore
 
 
-@pytest.fixture()
+@pytest.fixture
 def cookie_store() -> SessionStore:
     return CookieStore("key")
 

@@ -6,11 +6,11 @@ import typing
 class Serializer(abc.ABC):  # pragma: no cover
     @abc.abstractmethod
     def serialize(self, data: typing.Any) -> bytes:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def deserialize(self, data: bytes) -> typing.Dict[str, typing.Any]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JsonSerializer(Serializer):

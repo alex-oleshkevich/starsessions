@@ -1,5 +1,6 @@
-import pytest
 import re
+
+import pytest
 from starlette.requests import HTTPConnection
 from starlette.responses import JSONResponse
 from starlette.testclient import TestClient

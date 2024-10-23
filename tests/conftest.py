@@ -3,11 +3,11 @@ import pytest
 from starsessions import InMemoryStore, JsonSerializer
 
 
-@pytest.fixture()
+@pytest.fixture
 def serializer() -> JsonSerializer:
     return JsonSerializer()
 
 
-@pytest.fixture()
+@pytest.fixture
 def store() -> InMemoryStore:
     return InMemoryStore()

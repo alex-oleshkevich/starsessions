@@ -12,9 +12,13 @@ Usage:
 Open http://localhost:8000 for management panel.
 """
 
+import contextlib
 import datetime
 import json
 import os
+import typing
+
+from redis.asyncio import Redis
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.requests import Request
@@ -53,13 +57,22 @@ async def clean(request: Request) -> RedirectResponse:
     return RedirectResponse("/")
 
 
+redis_client = Redis.from_url(REDIS_URL)
+
+
+@contextlib.asynccontextmanager
+async def lifespan(app: Starlette) -> typing.AsyncGenerator[typing.Dict[str, typing.Any], None]:
+    async with redis_client:
+        yield {}
+
+
 routes = [
     Route("/", endpoint=homepage),
     Route("/set", endpoint=set_time),
     Route("/clean", endpoint=clean),
 ]
 middleware = [
-    Middleware(SessionMiddleware, store=RedisStore(REDIS_URL), lifetime=10, rolling=True),
+    Middleware(SessionMiddleware, store=RedisStore(connection=redis_client), lifetime=10, rolling=True),
     Middleware(SessionAutoloadMiddleware),
 ]
-app = Starlette(debug=True, routes=routes, middleware=middleware)
+app = Starlette(debug=True, routes=routes, middleware=middleware, lifespan=lifespan)

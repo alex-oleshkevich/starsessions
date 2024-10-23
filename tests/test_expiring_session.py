@@ -1,10 +1,11 @@
-import pytest
 import time
+from unittest import mock
+
+import pytest
 from starlette.requests import HTTPConnection
 from starlette.responses import JSONResponse
 from starlette.testclient import TestClient
 from starlette.types import Receive, Scope, Send
-from unittest import mock
 
 from starsessions import SessionMiddleware, SessionStore, load_session
 
