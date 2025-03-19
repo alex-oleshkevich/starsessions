@@ -1,9 +1,8 @@
 import datetime
 import os
-from typing import AsyncGenerator
-
 import databases
 import pytest
+import typing
 
 from databases import Database
 
@@ -14,8 +13,7 @@ DATABASE_URL = os.environ.get("TEST_DATABASE_URL", "sqlite:///./test.db")
 
 
 @pytest.fixture
-async def database() -> AsyncGenerator[Database, None]:
-    """Create a test database connection."""
+async def database() -> typing.AsyncGenerator[Database, None]:
     database = Database(DATABASE_URL)
     await database.connect()
     await create_table(database)
@@ -31,7 +29,6 @@ async def database() -> AsyncGenerator[Database, None]:
 
 
 async def test_database_read_write(database: databases.Database) -> None:
-    """Test basic read and write operations."""
     db_store = DatabaseStore(database=database)
 
     new_id = await db_store.write("session_id", b"data", lifetime=60, ttl=60)
@@ -40,13 +37,11 @@ async def test_database_read_write(database: databases.Database) -> None:
 
 
 async def test_database_write_with_session_only_setup(database: databases.Database) -> None:
-    """Test writing with session-only setup (lifetime=0)."""
     db_store = DatabaseStore(database=database)
     await db_store.write("session_id", b"data", lifetime=0, ttl=0)
 
 
 async def test_database_remove(database: databases.Database) -> None:
-    """Test removing session data."""
     db_store = DatabaseStore(database=database)
 
     await db_store.write("session_id", b"data", lifetime=60, ttl=60)
@@ -55,13 +50,11 @@ async def test_database_remove(database: databases.Database) -> None:
 
 
 async def test_database_empty_session(database: databases.Database) -> None:
-    """Test reading a non-existent session."""
     db_store = DatabaseStore(database=database)
     assert await db_store.read("unknown_session_id", lifetime=60) == b""
 
 
 async def test_database_expired_session(database: databases.Database) -> None:
-    """Test reading an expired session."""
     db_store = DatabaseStore(database=database)
 
     # Insert expired session directly
@@ -77,7 +70,6 @@ async def test_database_expired_session(database: databases.Database) -> None:
 
 
 async def test_database_update_session(database: databases.Database) -> None:
-    """Test updating an existing session."""
     db_store = DatabaseStore(database=database)
 
     await db_store.write("session_id", b"initial_data", lifetime=60, ttl=60)
@@ -86,13 +78,11 @@ async def test_database_update_session(database: databases.Database) -> None:
 
 
 async def test_database_requires_database() -> None:
-    """Test that a database connection is required."""
     with pytest.raises(ImproperlyConfigured):
         DatabaseStore()
 
 
 async def test_custom_gc_ttl(database: databases.Database) -> None:
-    """Test setting a custom gc_ttl value."""
     custom_ttl = 3600
     db_store = DatabaseStore(database=database, gc_ttl=custom_ttl)
 
