@@ -1,5 +1,3 @@
-from sqlite3 import connect
-
 ## Starsessions
 
 Advanced sessions for Starlette and FastAPI frameworks
