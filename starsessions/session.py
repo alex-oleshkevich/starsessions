@@ -14,6 +14,7 @@ from starsessions.types import SessionMetadata
 
 logger = logging.getLogger(__name__)
 
+
 def generate_session_id() -> str:
     """Generate a new, cryptographically strong session ID."""
     return secrets.token_hex(16)
@@ -142,7 +143,7 @@ class SessionHandler:
             lifetime=self.lifetime,
             ttl=remaining_time,
         )
-        logger.debug(f"Saving new session with ID {self.session_id}")
+        logger.debug(f"Saving new session with ID {self.session_id} for request {self.connection.client}")
         return self.session_id
 
     async def destroy(self) -> None:
