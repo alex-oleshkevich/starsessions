@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import secrets
 import time
 import typing
@@ -11,6 +12,7 @@ from starsessions.serializers import Serializer
 from starsessions.stores import SessionStore
 from starsessions.types import SessionMetadata
 
+logger = logging.getLogger(__name__)
 
 def generate_session_id() -> str:
     """Generate a new, cryptographically strong session ID."""
@@ -101,6 +103,7 @@ class SessionHandler:
         self.metadata: typing.Optional[SessionMetadata] = None
 
     async def load(self) -> None:
+        logger.debug(f"Loading existing session with ID {self.session_id}")
         # don't refresh existing session, it may contain user data
         if self.is_loaded:  # pragma: nocover, IDK how to test it :(
             return
@@ -139,11 +142,13 @@ class SessionHandler:
             lifetime=self.lifetime,
             ttl=remaining_time,
         )
+        logger.debug(f"Saving new session with ID {self.session_id}")
         return self.session_id
 
     async def destroy(self) -> None:
         """Destroy session."""
         if self.session_id:
+            logger.debug(f"Destroying session with ID {self.session_id}")
             await self.store.remove(self.session_id)
 
     @property
