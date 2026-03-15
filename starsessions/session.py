@@ -6,6 +6,7 @@ import typing
 
 from starlette.requests import HTTPConnection
 
+from starsessions.encryptors import Encryptor
 from starsessions.exceptions import SessionNotLoaded
 from starsessions.serializers import Serializer
 from starsessions.stores import SessionStore
@@ -89,31 +90,33 @@ class SessionHandler:
         session_id: str | None,
         store: SessionStore,
         serializer: Serializer,
+        encryptor: Encryptor,
         lifetime: int,
     ) -> None:
         self.connection = connection
         self.session_id = session_id
         self.store = store
         self.serializer = serializer
+        self.encryptor = encryptor
         self.is_loaded = False
         self.initially_empty = False
         self.lifetime = lifetime
         self.metadata: SessionMetadata | None = None
+        self._remove_data_for_session: str | None = None
 
     async def load(self) -> None:
         # don't refresh existing session, it may contain user data
-        if self.is_loaded:  # pragma: nocover, IDK how to test it :(
+        if self.is_loaded:  # pragma: no cover
             return
 
         self.is_loaded = True
         data = {}
         if self.session_id:
-            data = self.serializer.deserialize(
-                await self.store.read(
-                    session_id=self.session_id,
-                    lifetime=self.lifetime,
-                ),
-            )
+            raw = await self.store.read(session_id=self.session_id, lifetime=self.lifetime)
+            try:
+                data = self.serializer.deserialize(await self.encryptor.decrypt(raw))
+            except Exception:
+                data = {}
 
         # read and merge metadata
         metadata = {
@@ -122,7 +125,12 @@ class SessionHandler:
             "last_access": time.time(),
         }
         metadata.update(data.pop("__metadata__", {}))
-        metadata.update({"last_access": time.time()})  # force update
+        metadata.update(
+            {
+                "last_access": time.time(),
+                "lifetime": self.lifetime,
+            },
+        )  # force update
         self.metadata = metadata  # type: ignore[assignment]
 
         self.connection.scope["session"] = {}
@@ -135,10 +143,15 @@ class SessionHandler:
 
         self.session_id = await self.store.write(
             session_id=self.session_id or generate_session_id(),
-            data=self.serializer.serialize(self.connection.session),
+            data=await self.encryptor.encrypt(
+                self.serializer.serialize(self.connection.session),
+            ),
             lifetime=self.lifetime,
             ttl=remaining_time,
         )
+        if self._remove_data_for_session:
+            await self.store.remove(self._remove_data_for_session)
+            self._remove_data_for_session = None
         return self.session_id
 
     async def destroy(self) -> None:
@@ -151,5 +164,6 @@ class SessionHandler:
         return len(self.connection.session) == 0
 
     def regenerate_id(self) -> str:
+        self._remove_data_for_session = self.session_id
         self.session_id = generate_session_id()
         return self.session_id

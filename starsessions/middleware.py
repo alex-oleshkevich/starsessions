@@ -9,6 +9,7 @@ from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from starsessions import SessionNotLoaded
+from starsessions.encryptors import Encryptor, NoopEncryptor
 from starsessions.serializers import JsonSerializer, Serializer
 from starsessions.session import (
     SessionHandler,
@@ -16,6 +17,12 @@ from starsessions.session import (
     load_session,
 )
 from starsessions.stores import SessionStore
+
+_SAFE_COOKIE_VALUE_RE = re.compile(r"^[A-Za-z0-9\-._~+/=]+$")
+
+
+def _is_safe_cookie_value(value: str) -> bool:
+    return bool(_SAFE_COOKIE_VALUE_RE.match(value))
 
 
 class LoadGuard:
@@ -27,10 +34,10 @@ class LoadGuard:
 
         self._raise()
 
-    def __setitem__(self, key: str, value: typing.Any) -> typing.NoReturn:  # pragma: nocover
+    def __setitem__(self, key: str, value: typing.Any) -> typing.NoReturn:  # pragma: no cover
         self._raise()
 
-    def __getitem__(self, key: str) -> typing.NoReturn:  # pragma: nocover
+    def __getitem__(self, key: str) -> typing.NoReturn:  # pragma: no cover
         self._raise()
 
     def _raise(self) -> typing.NoReturn:
@@ -50,14 +57,20 @@ class SessionMiddleware:
         cookie_domain: str | None = None,
         cookie_path: str | None = None,
         serializer: Serializer | None = None,
+        encryptor: Encryptor | None = None,
     ) -> None:
         lifetime = int(lifetime.total_seconds() if isinstance(lifetime, datetime.timedelta) else lifetime)
         assert lifetime >= 0, "Session lifetime cannot be less than zero seconds."
+        if not re.match(r"^[a-zA-Z0-9_-]+$", cookie_name):
+            raise ValueError(
+                f"Invalid cookie_name {cookie_name!r}: must contain only alphanumeric characters, hyphens, or underscores."
+            )
 
         self.app = app
         self.store = store
         self.rolling = rolling
         self.serializer = serializer or JsonSerializer()
+        self.encryptor = encryptor or NoopEncryptor()
         self.cookie_name = cookie_name
         self.lifetime = lifetime
         self.cookie_domain = cookie_domain
@@ -72,8 +85,18 @@ class SessionMiddleware:
             return
 
         connection = HTTPConnection(scope)
-        session_id = connection.cookies.get(self.cookie_name)
-        handler = SessionHandler(connection, session_id, self.store, self.serializer, self.lifetime)
+        raw_session_id = connection.cookies.get(self.cookie_name)
+        # Reject values that contain characters unsafe in HTTP headers to prevent
+        # header injection if the session_id is ever echoed into Set-Cookie.
+        session_id = raw_session_id if raw_session_id and _is_safe_cookie_value(raw_session_id) else None
+        handler = SessionHandler(
+            connection=connection,
+            session_id=session_id,
+            store=self.store,
+            serializer=self.serializer,
+            lifetime=self.lifetime,
+            encryptor=self.encryptor,
+        )
 
         scope["session"] = LoadGuard()
         scope["session_handler"] = handler
@@ -84,7 +107,7 @@ class SessionMiddleware:
                 return
 
             # session was not loaded, do nothing
-            if not handler.is_loaded:  # pragma: nocover
+            if not handler.is_loaded:  # pragma: no cover
                 await send(message)
                 return
 

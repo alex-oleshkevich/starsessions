@@ -32,3 +32,5 @@ repos:
                     - redis
                     - itsdangerous
                     - fastapi
+                    - starlette
+                    - cryptography

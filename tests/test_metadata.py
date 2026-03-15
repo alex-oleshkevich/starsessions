@@ -67,7 +67,7 @@ def test_load_should_not_overwrite_created_timestamp(store: SessionStore) -> Non
         assert client.get("/").json() == {
             "created": 42,
             "last_access": 1660556520,
-            "lifetime": 0,
+            "lifetime": 1209600,  # server-configured value always wins
         }
 
 

@@ -9,6 +9,8 @@ Usage:
 Open http://localhost:8000 for demo page.
 """
 
+import html
+
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.requests import Request
@@ -52,7 +54,7 @@ async def profile(request: Request) -> Response:
 
     return HTMLResponse(
         f"""
-    <p>Hi, {username}!</p>
+    <p>Hi, {html.escape(username)}!</p>
     <form method="post" action="/logout">
     <button type="submit">logout</button>
     </form>

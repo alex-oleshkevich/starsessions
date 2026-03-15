@@ -11,8 +11,9 @@ from starsessions.stores.base import SessionStore
 class CookieStore(SessionStore):
     """Stores session data in the browser's cookie as a signed string."""
 
-    def __init__(self, secret_key: str | Secret):
+    def __init__(self, secret_key: str | Secret, max_size: int = 4096):
         self._signer = TimestampSigner(str(secret_key))
+        self.max_size = max_size
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
         """A session_id is a signed session value."""
@@ -32,7 +33,13 @@ class CookieStore(SessionStore):
     async def write(self, session_id: str, data: bytes, lifetime: int, ttl: int) -> str:
         """The data is a session id in this storage."""
         encoded_data = b64encode(data)
-        return self._signer.sign(encoded_data).decode("utf-8")
+        signed = self._signer.sign(encoded_data)
+        if len(signed) > self.max_size:
+            raise ValueError(
+                f"Session data too large: {len(signed)} bytes exceeds the {self.max_size}-byte cookie limit. "
+                "Store less data in the session or switch to a server-side store."
+            )
+        return signed.decode("utf-8")
 
     async def remove(self, session_id: str) -> None:
         """Session data stored on client side - no way to remove it."""

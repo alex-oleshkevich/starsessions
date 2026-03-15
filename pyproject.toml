@@ -30,6 +30,8 @@ dependencies = [
 
 [project.optional-dependencies]
 redis = ["redis>=4.2"]
+cryptography = ["cryptography>=42"]
+all =  ["redis>=4.2", "cryptography>=42"]
 
 [project.urls]
 Homepage = "https://github.com/alex-oleshkevich/starsessions"
@@ -52,6 +54,7 @@ dev = [
     "mypy>=1.14",
     "redis>=4.2",
     "httpx>=0.28",
+    "cryptography>=42",
 ]
 
 [tool.coverage.run]
@@ -79,6 +82,9 @@ asyncio_mode = 'auto'
 asyncio_default_fixture_loop_scope = 'session'
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = "--tb=short -s --no-cov-on-fail"
+filterwarnings = [
+    "ignore::UserWarning:starsessions.encryptors",
+]
 testpaths = ["tests"]
 norecursedirs = [
     "node_modules", "frontend", "storage", "dist", ".git",
