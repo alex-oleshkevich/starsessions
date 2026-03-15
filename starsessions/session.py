@@ -26,7 +26,7 @@ def regenerate_session_id(connection: HTTPConnection) -> str:
     return get_session_handler(connection).regenerate_id()
 
 
-def get_session_id(connection: HTTPConnection) -> typing.Optional[str]:
+def get_session_id(connection: HTTPConnection) -> str | None:
     """Get current session ID."""
     return get_session_handler(connection).session_id
 
@@ -86,7 +86,7 @@ class SessionHandler:
     def __init__(
         self,
         connection: HTTPConnection,
-        session_id: typing.Optional[str],
+        session_id: str | None,
         store: SessionStore,
         serializer: Serializer,
         lifetime: int,
@@ -98,7 +98,7 @@ class SessionHandler:
         self.is_loaded = False
         self.initially_empty = False
         self.lifetime = lifetime
-        self.metadata: typing.Optional[SessionMetadata] = None
+        self.metadata: SessionMetadata | None = None
 
     async def load(self) -> None:
         # don't refresh existing session, it may contain user data

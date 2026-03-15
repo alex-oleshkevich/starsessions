@@ -1,4 +1,4 @@
-import typing
+from __future__ import annotations
 
 from starsessions.stores.base import SessionStore
 
@@ -7,7 +7,7 @@ class InMemoryStore(SessionStore):
     """Stores session data in a dictionary."""
 
     def __init__(self) -> None:
-        self.data: typing.Dict[str, bytes] = {}
+        self.data: dict[str, bytes] = {}
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
         return self.data.get(session_id, b"")

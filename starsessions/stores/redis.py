@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import typing
 import warnings
@@ -17,9 +19,9 @@ class RedisStore(SessionStore):
 
     def __init__(
         self,
-        url: typing.Optional[str] = None,
-        connection: typing.Optional[Redis] = None,
-        prefix: typing.Union[typing.Callable[[str], str], str] = "starsessions.",
+        url: str | None = None,
+        connection: Redis | None = None,
+        prefix: typing.Callable[[str], str] | str = "starsessions.",
         gc_ttl: int = 3600 * 24 * 30,
     ) -> None:
         """

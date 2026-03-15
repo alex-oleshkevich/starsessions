@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import re
 import typing
@@ -40,14 +42,14 @@ class SessionMiddleware:
         self,
         app: ASGIApp,
         store: SessionStore,
-        lifetime: typing.Union[int, datetime.timedelta] = 0,  # session-only
+        lifetime: int | datetime.timedelta = 0,  # session-only
         rolling: bool = False,
         cookie_name: str = "session",
         cookie_same_site: str = "lax",
         cookie_https_only: bool = True,
-        cookie_domain: typing.Optional[str] = None,
-        cookie_path: typing.Optional[str] = None,
-        serializer: typing.Optional[Serializer] = None,
+        cookie_domain: str | None = None,
+        cookie_path: str | None = None,
+        serializer: Serializer | None = None,
     ) -> None:
         lifetime = int(lifetime.total_seconds() if isinstance(lifetime, datetime.timedelta) else lifetime)
         assert lifetime >= 0, "Session lifetime cannot be less than zero seconds."
@@ -152,7 +154,7 @@ class SessionAutoloadMiddleware:
     def __init__(
         self,
         app: ASGIApp,
-        paths: typing.Optional[typing.List[typing.Union[str, typing.Pattern[str]]]] = None,
+        paths: list[str | re.Pattern[str]] | None = None,
     ) -> None:
         self.app = app
         self.paths = paths or []

@@ -1,4 +1,5 @@
-import typing
+from __future__ import annotations
+
 from base64 import b64decode, b64encode
 
 from itsdangerous import BadSignature, TimestampSigner
@@ -10,7 +11,7 @@ from starsessions.stores.base import SessionStore
 class CookieStore(SessionStore):
     """Stores session data in the browser's cookie as a signed string."""
 
-    def __init__(self, secret_key: typing.Union[str, Secret]):
+    def __init__(self, secret_key: str | Secret):
         self._signer = TimestampSigner(str(secret_key))
 
     async def read(self, session_id: str, lifetime: int) -> bytes:
