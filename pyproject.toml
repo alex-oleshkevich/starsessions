@@ -50,7 +50,6 @@ dev = [
     "pytest-asyncio>=0.25",
     "pytest-cov>=6.0",
     "mypy>=1.14",
-    "fastapi>=0.120",
     "redis>=4.2",
     "httpx>=0.28",
 ]

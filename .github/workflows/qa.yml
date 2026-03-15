@@ -40,8 +40,6 @@ jobs:
 
             -   name: Install dependencies
                 run: uv sync --group dev
-                env:
-                    PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
 
             -   name: Test with pytest
                 run: uv run pytest --no-cov-on-fail --cov starsessions/ --cov tests/
