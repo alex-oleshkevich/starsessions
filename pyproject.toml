@@ -1,6 +1,6 @@
 [project]
 name = "starsessions"
-version = "2.2.1"
+version = "2.3.0a1"
 description = "Advanced sessions for Starlette and FastAPI frameworks"
 authors = [{ name = "Alex Oleshkevich", email = "alex.oleshkevich@gmail.com" }]
 license = { text = "MIT" }

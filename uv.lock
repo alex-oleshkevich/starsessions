@@ -916,7 +916,7 @@ wheels = [
 
 [[package]]
 name = "starsessions"
-version = "2.2.1"
+version = "2.3.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "itsdangerous" },
