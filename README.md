@@ -241,6 +241,31 @@ Class: `starsessions.CookieStore`
 
 Stores session data in a signed cookie on the client. No server-side storage required.
 
+> **Security notice — confidentiality**
+>
+> `CookieStore` **signs** session data (using HMAC) to prevent tampering, but it does **not encrypt** it by default.
+> Any user can base64-decode their cookie and read all session data in plaintext.
+>
+> **Never store sensitive data** (passwords, tokens, PII, roles) in a `CookieStore` session unless you also configure an encryptor:
+>
+> ```python
+> from cryptography.fernet import Fernet
+> from starsessions.encryptors import FernetEncryptor
+>
+> key = Fernet.generate_key()  # store this securely, e.g. in an env var
+> encryptor = FernetEncryptor(key)
+>
+> middleware = [
+>     Middleware(
+>         SessionMiddleware,
+>         store=CookieStore(secret_key="..."),
+>         encryptor=encryptor,
+>     )
+> ]
+> ```
+>
+> See the [Encryption](#encryption) section below for all available encryptors.
+
 ### Redis
 
 Class: `starsessions.stores.redis.RedisStore`
@@ -342,6 +367,79 @@ and `ttl` is the remaining session time. After `ttl` seconds the data can be saf
 > In such cases you don't have an exact expiration value, and you would have to find a way to extend the session TTL
 > on the storage side, if any.
 
+## Encryption
+
+Session data can be encrypted at rest (in the cookie or in the backend store) by passing an `encryptor` to `SessionMiddleware`.
+This is especially important when using `CookieStore`, where session data is stored on the client.
+
+Two built-in encryptors are available:
+
+### FernetEncryptor
+
+Uses AES-128-CBC + HMAC-SHA256 via the [`cryptography`](https://cryptography.io) library.
+Fernet is the recommended choice — it is simple, audited, and handles key rotation well.
+
+> Requires: `pip install cryptography`
+
+```python
+from cryptography.fernet import Fernet
+from starlette.middleware import Middleware
+from starsessions import CookieStore, SessionMiddleware
+from starsessions.encryptors import FernetEncryptor
+
+# generate once and store securely (e.g. ENCRYPTION_KEY env var).
+# rotating keys: pass a MultiFernet instance wrapping old + new keys.
+key = Fernet.generate_key()
+
+middleware = [
+    Middleware(
+        SessionMiddleware,
+        store=CookieStore(secret_key="..."),
+        encryptor=FernetEncryptor(key),
+    )
+]
+```
+
+### AESGCMEncryptor
+
+Uses AES-GCM (256-bit key) via the [`cryptography`](https://cryptography.io) library.
+A fresh random 12-byte nonce is generated for every write and prepended to the ciphertext.
+
+> Requires: `pip install cryptography`
+
+```python
+import os
+from starlette.middleware import Middleware
+from starsessions import CookieStore, SessionMiddleware
+from starsessions.encryptors import AESGCMEncryptor
+
+key = os.urandom(32)  # 256-bit key — store securely, never hard-code
+
+middleware = [
+    Middleware(
+        SessionMiddleware,
+        store=CookieStore(secret_key="..."),
+        encryptor=AESGCMEncryptor(key),
+    )
+]
+```
+
+### Custom encryptor
+
+Implement the `starsessions.encryptors.Encryptor` abstract class:
+
+```python
+from starsessions.encryptors import Encryptor
+
+
+class MyEncryptor(Encryptor):
+    async def encrypt(self, data: bytes) -> bytes:
+        ...
+
+    async def decrypt(self, data: bytes) -> bytes:
+        ...
+```
+
 ## Serializers
 
 Session data is serialized to JSON by default (`starsessions.JsonSerializer`). Implement `starsessions.Serializer` to use a custom format:
@@ -387,3 +485,15 @@ async def login(request):
     regenerate_session_id(request)
     return Response('successfully signed in')
 ```
+
+## Concurrent requests and session consistency
+
+Session reads and writes are **not atomic**. If two requests arrive simultaneously for the same session, both will read the current state, modify it independently, and write back — the last writer wins and silently overwrites the first writer's changes.
+
+This is a known trade-off shared by virtually all cookie/token-based session libraries. It is rarely a problem in practice because browser clients issue one request at a time for most flows.
+
+If your application issues multiple parallel API calls from the same client and all of them modify the session, consider one of these strategies:
+
+- **Design sessions to be append-only** — write only keys that a given endpoint owns so there is no overlap.
+- **Per-session locking (single-process)** — use an `asyncio.Lock` keyed on session ID. Works within a single process but not across multiple workers or pods.
+- **Atomic Redis operations (multi-process)** — implement a `RedisStore` subclass that uses a Lua script or `SET ... NX` to perform compare-and-swap on write, returning a conflict error that the caller retries.

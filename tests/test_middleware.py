@@ -1,12 +1,14 @@
 import datetime
 
 import pytest
+from cryptography.fernet import Fernet
 from starlette.requests import HTTPConnection
 from starlette.responses import JSONResponse, Response
 from starlette.testclient import TestClient
 from starlette.types import Receive, Scope, Send
 
 from starsessions import SessionMiddleware, SessionStore
+from starsessions.encryptors import FernetEncryptor
 from starsessions.session import load_session
 
 
@@ -269,3 +271,142 @@ def test_session_timedelta_lifetime(store: SessionStore) -> None:
 
     app = SessionMiddleware(app, store=store, lifetime=datetime.timedelta(seconds=60))
     assert app.lifetime == 60
+
+
+def test_no_cookie_clear_outside_cookie_path(store: SessionStore) -> None:
+    """When cookie_path is set and the request path does not match, the expiry Set-Cookie must not be sent."""
+
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await store.write("session_id", b'{"key": "value"}', lifetime=60, ttl=60)
+        await load_session(connection)
+        connection.session.clear()
+        response = Response("")
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, store=store, cookie_path="/admin")
+    client = TestClient(app, cookies={"session": "session_id"})
+    response = client.get("/")
+    assert "set-cookie" not in response.headers
+
+
+def test_invalid_cookie_name_raises(store: SessionStore) -> None:
+    """cookie_name must only contain alphanumeric characters, hyphens, or underscores."""
+
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:  # pragma: nocover
+        pass
+
+    with pytest.raises(ValueError, match="Invalid cookie_name"):
+        SessionMiddleware(app, store=store, cookie_name="bad name; inject=1")
+
+    with pytest.raises(ValueError, match="Invalid cookie_name"):
+        SessionMiddleware(app, store=store, cookie_name="bad\r\nname")
+
+    # valid names must not raise
+    SessionMiddleware(app, store=store, cookie_name="session")
+    SessionMiddleware(app, store=store, cookie_name="my-session_v2")
+
+
+def test_unsafe_session_id_is_ignored(store: SessionStore) -> None:
+    """A cookie value with unsafe characters must be silently discarded."""
+
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    app = SessionMiddleware(app, store=store)
+    # value with newline — header-injection attempt
+    client = TestClient(app, cookies={"session": "abc\r\nSet-Cookie: evil=1"})
+    assert client.get("/").json() == {}
+
+
+def test_store_error_propagates(store: SessionStore) -> None:
+    """Errors from the store (e.g. Redis outage) must not be silently swallowed."""
+    from unittest.mock import AsyncMock
+
+    from starsessions.stores.base import SessionStore as BaseStore
+
+    broken_store = AsyncMock(spec=BaseStore)
+    broken_store.read.side_effect = RuntimeError("connection refused")
+
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    middleware = SessionMiddleware(app, store=broken_store, cookie_https_only=False, lifetime=60)
+    client = TestClient(middleware, cookies={"session": "some_id"}, raise_server_exceptions=True)
+    with pytest.raises(RuntimeError, match="connection refused"):
+        client.get("/")
+
+
+def test_tampered_ciphertext_yields_empty_session(store: SessionStore) -> None:
+    """A tampered or wrongly-keyed ciphertext must produce an empty session, not a 500."""
+    encryptor = FernetEncryptor(Fernet.generate_key())
+    wrong_encryptor = FernetEncryptor(Fernet.generate_key())
+
+    async def write_app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        connection.session["secret"] = "classified"
+        response = Response("")
+        await response(scope, receive, send)
+
+    async def read_app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    write_middleware = SessionMiddleware(
+        write_app, store=store, encryptor=encryptor, cookie_https_only=False, lifetime=60
+    )
+    read_middleware = SessionMiddleware(
+        read_app, store=store, encryptor=wrong_encryptor, cookie_https_only=False, lifetime=60
+    )
+
+    write_response = TestClient(write_middleware, raise_server_exceptions=True).get("/")
+    session_cookie = write_response.cookies.get("session")
+    assert session_cookie is not None
+
+    result = TestClient(read_middleware, cookies={"session": session_cookie}, raise_server_exceptions=True).get("/")
+    assert result.status_code == 200
+    assert result.json() == {}
+
+
+def test_encryptor_round_trip_via_middleware(store: SessionStore) -> None:
+    """Data written through an encryptor must survive a full request round-trip."""
+    encryptor = FernetEncryptor(Fernet.generate_key())
+
+    async def write_app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        connection.session["secret"] = "classified"
+        response = Response("")
+        await response(scope, receive, send)
+
+    async def read_app(scope: Scope, receive: Receive, send: Send) -> None:
+        connection = HTTPConnection(scope, receive)
+        await load_session(connection)
+        response = JSONResponse(connection.session)
+        await response(scope, receive, send)
+
+    write_middleware = SessionMiddleware(
+        write_app, store=store, encryptor=encryptor, cookie_https_only=False, lifetime=60
+    )
+    read_middleware = SessionMiddleware(
+        read_app, store=store, encryptor=encryptor, cookie_https_only=False, lifetime=60
+    )
+
+    write_client = TestClient(write_middleware, raise_server_exceptions=True)
+    write_response = write_client.get("/")
+    session_cookie = write_response.cookies.get("session")
+    assert session_cookie is not None
+
+    read_client = TestClient(read_middleware, cookies={"session": session_cookie})
+    result = read_client.get("/")
+    assert result.json().get("secret") == "classified"

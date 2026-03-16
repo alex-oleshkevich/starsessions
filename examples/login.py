@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#   "python-multipart",
+#   "starsessions",
+#   "uvicorn",
+# ]
+# ///
 """
 This example demonstrates a simple login/logout flow.
 
@@ -9,6 +17,9 @@ Usage:
 Open http://localhost:8000 for demo page.
 """
 
+import html
+
+import uvicorn
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.requests import Request
@@ -52,7 +63,7 @@ async def profile(request: Request) -> Response:
 
     return HTMLResponse(
         f"""
-    <p>Hi, {username}!</p>
+    <p>Hi, {html.escape(username)}!</p>
     <form method="post" action="/logout">
     <button type="submit">logout</button>
     </form>
@@ -75,3 +86,6 @@ middleware = [
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,3 +1,10 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#   "starsessions",
+#   "uvicorn",
+# ]
+# ///
 """
 This example demonstrates base usage of this library. The session will expire in 10 seconds after creation.
 
@@ -10,6 +17,7 @@ Open http://localhost:8000 for demo page.
 import datetime
 import json
 
+import uvicorn
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.requests import Request
@@ -57,3 +65,6 @@ middleware = [
     Middleware(SessionAutoloadMiddleware),
 ]
 app = Starlette(debug=True, routes=routes, middleware=middleware)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
