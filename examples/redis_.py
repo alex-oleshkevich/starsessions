@@ -1,3 +1,10 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#   "starsessions[redis]",
+#   "uvicorn",
+# ]
+# ///
 """
 This example demonstrates Redis store usage.
 

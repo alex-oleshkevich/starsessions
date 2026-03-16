@@ -114,7 +114,7 @@ class SessionHandler:
         if self.session_id:
             raw = await self.store.read(session_id=self.session_id, lifetime=self.lifetime)
             try:
-                data = self.serializer.deserialize(await self.encryptor.decrypt(raw))
+                data = self.serializer.deserialize(self.encryptor.decrypt(raw))
             except Exception:
                 data = {}
 
@@ -143,7 +143,7 @@ class SessionHandler:
 
         self.session_id = await self.store.write(
             session_id=self.session_id or generate_session_id(),
-            data=await self.encryptor.encrypt(
+            data=self.encryptor.encrypt(
                 self.serializer.serialize(self.connection.session),
             ),
             lifetime=self.lifetime,

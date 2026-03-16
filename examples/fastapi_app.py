@@ -1,3 +1,10 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#   "fastapi[standard]",
+#   "starsessions",
+# ]
+# ///
 """
 This examples demonstrates integration with FastAPI.
 
@@ -14,6 +21,7 @@ access localhost:8000/clean to clear session data
 import datetime
 import typing
 
+import uvicorn
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -43,3 +51,7 @@ async def clean(request: Request) -> str:
     """Access this view (GET '/clean') to remove all session contents."""
     request.session.clear()
     return "/"
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

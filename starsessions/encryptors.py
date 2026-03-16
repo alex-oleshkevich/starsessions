@@ -1,25 +1,24 @@
 import abc
 import os
 import warnings
-from asyncio import to_thread
 
 
 class Encryptor(abc.ABC):
-    async def encrypt(self, data: bytes) -> bytes:
+    def encrypt(self, data: bytes) -> bytes:
         raise NotImplementedError
 
-    async def decrypt(self, data: bytes) -> bytes:
+    def decrypt(self, data: bytes) -> bytes:
         raise NotImplementedError
 
 
 class NoopEncryptor(Encryptor):
-    async def encrypt(self, data: bytes) -> bytes:
+    def encrypt(self, data: bytes) -> bytes:
         warnings.warn(
             "NoopEncryptor is not secure and should not be used in production. Please, configure a secure encryptor."
         )
         return data
 
-    async def decrypt(self, data: bytes) -> bytes:
+    def decrypt(self, data: bytes) -> bytes:
         return data
 
 
@@ -33,11 +32,11 @@ class FernetEncryptor(Encryptor):
         self.fernet = Fernet(key)
         self.key = key
 
-    async def encrypt(self, data: bytes) -> bytes:
-        return await to_thread(self.fernet.encrypt, data)
+    def encrypt(self, data: bytes) -> bytes:
+        return self.fernet.encrypt(data)
 
-    async def decrypt(self, data: bytes) -> bytes:
-        return await to_thread(self.fernet.decrypt, data)
+    def decrypt(self, data: bytes) -> bytes:
+        return self.fernet.decrypt(data)
 
 
 class AESGCMEncryptor(Encryptor):
@@ -50,13 +49,13 @@ class AESGCMEncryptor(Encryptor):
         self.aesgcm = AESGCM(key)
         self.key = key
 
-    async def encrypt(self, data: bytes) -> bytes:
+    def encrypt(self, data: bytes) -> bytes:
         nonce = os.urandom(12)
-        ciphertext = await to_thread(self.aesgcm.encrypt, nonce, data, None)
+        ciphertext = self.aesgcm.encrypt(nonce, data, None)
         return nonce + ciphertext
 
-    async def decrypt(self, data: bytes) -> bytes:
+    def decrypt(self, data: bytes) -> bytes:
         if len(data) < 12:
             return b""
         nonce, ciphertext = data[:12], data[12:]
-        return await to_thread(self.aesgcm.decrypt, nonce, ciphertext, None)
+        return self.aesgcm.decrypt(nonce, ciphertext, None)
